@@ -1,0 +1,186 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Tharuni</title>
+        <style type="text/css">
+            html, body {
+                margin:0;
+                padding:0;
+                border:0px;
+                height:100%;
+                width:100%;
+                overflow:auto;
+                font-family:Perpetua, Georgia, Consolas;
+                background-color: #fefeff;
+                min-height:600px;
+                min-width:800px;
+                color: Navy;
+                background-color: MintCream;
+            }
+            .std_img {
+                height:100%;
+                width:100%;
+                opacity:0.3;
+                filter:Alpha(opacity=30);
+            }
+            .std_img:hover {
+                opacity:1;
+                filter:Alpha(opacity=100);
+            }
+            .menu {
+                position: absolute;
+                top: 5%;
+                left: 10%;
+                right:0%;
+                min-width:800px;
+                font-size:240%;
+            }
+            .logo {
+                position: absolute;
+                top: -10%;
+                right: 100.2%;
+                height:20%;
+                width:8.6%;
+                min-height:100px;
+                min-width:100px;
+            }
+            .mitem {
+                float:left;
+                padding: 2%;
+                padding-left: 5%;
+                padding-right: 5%;
+                margin:0%;
+                background-color: Honeydew;
+            }
+            .mitem:hover {
+                background-color: PaleGreen;
+            }
+            .card {
+                position: absolute;
+                top:27%;
+                bottom:18%;
+                left:2.5%;
+                width:95%;
+            }
+            #prev {
+                position:absolute;
+                left:0%;
+                right:97%;
+                height:100%;
+            }
+            #next {
+                position:absolute;
+                left:97%;
+                right:0%;
+                height:100%;
+            }
+            #content {
+                position:absolute;
+                left:3%;
+                right:3%;
+                height:100%;
+                overflow:hidden;
+                border-style:solid;
+                border-color:HoneyDew;
+                border-width:5px;
+                border-radius:2%;
+            }
+            #image {
+                position:absolute;
+                left:0%;
+                width:61.8%;
+                height:100%;
+            }
+            #impact {
+                position:absolute;
+                left:61.8%;
+                right:0%;
+                height:100%;
+                padding-left:10px;
+                background-color: Azure;
+            }
+            #more,#more:link,#more:visited,#more:hover,#more:active {
+                font-size: 140%;
+                color: MidnightBlue;
+                text-decoration:None;
+                position: absolute;
+                bottom:5%;
+                right:5%;
+            }
+            #more:hover {
+                color:RoyalBlue;
+            }
+            .share {
+                position: absolute;
+                top:88%;
+                left:3%;
+                right:3%;
+                height: 10%;
+                background-color: AliceBlue;
+            }
+            #fb {
+                position: absolute;
+                width:200px;
+                height:100%;
+            }
+        </style>
+        <script type="text/JavaScript">
+        cards = [];
+        ajax = window.XMLHttpRequest?(new XMLHttpRequest()):(new ActiveXObject("Microsoft.XMLHttp"));
+        ajax.onreadystatechange=function() {
+            if(ajax.readyState===4) {
+                cards = eval(ajax.responseText)||[];
+            }
+        };
+        ajax.open("GET", "./cards/tharuni", true);
+        ajax.send(null);
+        </script>
+    </head>
+    <body>
+        <div class="menu">
+            <img class="logo" src="./images/logo.jpg" />
+            <span class="mitem">Children</span>
+            <span class="mitem">Women</span>
+            <span class="mitem">Aged</span>
+            <span class="mitem">Artisans</span>
+            <span class="mitem">About</span>
+        </div>
+        <div class="card">
+            <span id="prev"><img class="std_img" src="images/arrow_r.png"/></span>
+            <span id="content">
+                <img id="image" src="./images/banner.jpg" />
+                <div id="impact">
+                    <h1 id="head">Tharuni</h1>
+                    <p id="body">An Organisation working for Children, Women and the Aged, in Warangal District of Andhra Prades, India</p>
+                    <a id="more" href="">Learn More</a>
+                </div>
+            </span>
+            <span id="next"><img class="std_img" src="images/arrow_l.png"/></span>
+        </div>
+        <div class="share">
+            <div id="fb">
+                <div id="fb-root"></div>
+                <script type="text/JavaScript">(function(d, s, id) {
+                  var js, fjs = d.getElementsByTagName(s)[0];
+                  if (d.getElementById(id)) return;
+                  js = d.createElement(s); js.id = id;
+                  js.src = "http://connect.facebook.net/en_US/all.js#xfbml=1";
+                  fjs.parentNode.insertBefore(js, fjs);
+                }(document, 'script', 'facebook-jssdk'));</script>
+                <div class="fb-like-box" data-href="https://www.facebook.com/Tharuni.org" data-width="200" data-show-faces="false" data-border-color="Navy" data-stream="false" data-header="false"></div>
+            </div>
+        </div>
+        <script type="text/JavaScript">
+            function setCard(card) {
+                if(!card)   return;
+                document.getElementById("image").src = card.image;
+                document.getElementById("head").innerHTML = card.title;
+                document.getElementById("body").innerHTML = card.content;
+                document.getElementById("more").href = card.link;
+            }
+            i=0;
+            (cards.length>i)?setCard(cards[i]):setTimeout("(cards.length>i)?setCard(cards[i]):setTimeout('setCard(cards[i])', 100)", 100);
+            setTimeout('setCard(cards[++i])', 5000);
+        </script>
+    <body>
+</html>
