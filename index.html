@@ -126,10 +126,12 @@
         </style>
         <script type="text/JavaScript">
         cards = [];
+        i = 0;
         ajax = window.XMLHttpRequest?(new XMLHttpRequest()):(new ActiveXObject("Microsoft.XMLHttp"));
         ajax.onreadystatechange=function() {
             if(ajax.readyState===4) {
                 cards = eval(ajax.responseText)||[];
+                if(setCard) setCard(cards[0]);
             }
         };
         ajax.open("GET", "./cards/tharuni", true);
@@ -186,8 +188,7 @@
                 i=++i>cards.length-1?0:i;
                 setCard(cards[i]);
             }
-            i=0;
-            //(cards.length>0)?setCard(cards[0]):setTimeout("(cards.length>0)?setCard(cards[0]):setTimeout('setCard(cards[0])', 1)", 1);
+            if(cards.length>0)  setCard(cards[0]);
         </script>
     <body>
 </html>
