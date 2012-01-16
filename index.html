@@ -126,10 +126,12 @@
         </style>
         <script type="text/JavaScript">
         cards = [];
+        i = 0;
         ajax = window.XMLHttpRequest?(new XMLHttpRequest()):(new ActiveXObject("Microsoft.XMLHttp"));
         ajax.onreadystatechange=function() {
             if(ajax.readyState===4) {
                 cards = eval(ajax.responseText)||[];
+                if(setCard) setCard(cards[0]);
             }
         };
         ajax.open("GET", "./cards/tharuni", true);
@@ -146,7 +148,7 @@
             <span class="mitem">About</span>
         </div>
         <div class="card">
-            <span id="prev"><img class="std_img" src="images/arrow_r.png"/></span>
+            <span id="prev" onclick="JavaScript:prev_card();"><img class="std_img" src="images/arrow_r.png"/></span>
             <span id="content">
                 <img id="image" src="./images/banner.jpg" />
                 <div id="impact">
@@ -155,7 +157,7 @@
                     <a id="more" href="">Learn More</a>
                 </div>
             </span>
-            <span id="next"><img class="std_img" src="images/arrow_l.png"/></span>
+            <span id="next" onclick="JavaScript:next_card();"><img class="std_img" src="images/arrow_l.png"/></span>
         </div>
         <div class="share">
             <div id="fb">
@@ -178,9 +180,15 @@
                 document.getElementById("body").innerHTML = card.content;
                 document.getElementById("more").href = card.link;
             }
-            i=0;
-            (cards.length>i)?setCard(cards[i]):setTimeout("(cards.length>i)?setCard(cards[i]):setTimeout('setCard(cards[i])', 100)", 100);
-            setTimeout('setCard(cards[++i])', 5000);
+            function prev_card(){
+                i=--i<0?cards.length-1:i;
+                setCard(cards[i]);
+            }
+            function next_card(){
+                i=++i>cards.length-1?0:i;
+                setCard(cards[i]);
+            }
+            if(cards.length>0)  setCard(cards[0]);
         </script>
     <body>
 </html>
