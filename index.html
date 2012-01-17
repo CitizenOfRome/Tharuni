@@ -3,7 +3,7 @@
     <head>
         <title>Tharuni</title>
         <style type="text/css">
-            html, body {
+            html, body, #overlord {
                 margin:0;
                 padding:0;
                 border:0px;
@@ -11,9 +11,11 @@
                 width:100%;
                 overflow:auto;
                 font-family:Perpetua, Georgia, Consolas;
-                background-color: #fefeff;
                 min-height:600px;
                 min-width:800px;
+                position: absolute;
+                top:0%;
+                left:0%;
                 color: Navy;
                 background-color: MintCream;
             }
@@ -139,7 +141,7 @@
         ajax.send(null);
         </script>
     </head>
-    <body>
+    <body><div id="overlord">
         <div class="menu">
             <img class="logo" src="./images/logo.jpg" />
             <span class="mitem">Children</span>
@@ -191,5 +193,5 @@
             }
             if(cards.length>0)  setCard(cards[0]);
         </script>
-    <body>
+    </div></body>
 </html>
