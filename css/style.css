@@ -221,20 +221,40 @@ td { vertical-align: middle; }
     font-family:Perpetua, Georgia, Consolas;
     min-height:480px;
     min-width:1024px;
-    color: #193A5C;
-    background-color: white;
-    background-image: url('http://subtlepatterns.com/patterns/stucco.png');
+    color: mintcream;/*#193A5C*/
+    background-color: lightblue;
+    background-image: url('http://subtlepatterns.com/patterns/rubber_grip.png');/*http://subtlepatterns.com/patterns/frenchstucco.png*/
+    font-size:120%;
+  }
+  a, a:hover, a:active, a:visited {
+    color:inherit;
+    text-decoration:None;
+    font-weight:bold;
+  }
+  a:hover {
+    text-decoration:underline;
   }
   header {
-    background-image: url('http://subtlepatterns.com/patterns/soft_wallpaper.png');
+    background-image: url('http://subtlepatterns.com/patterns/denim.png');
+    /*http://subtlepatterns.com/patterns/soft_wallpaper.png*/
+    color: white;
   }
   .slides {
-    background-image: url('http://subtlepatterns.com/patterns/fancy_deboss.png');
+    background-image: url('http://subtlepatterns.com/patterns/green_dust_scratch.png');/*http://subtlepatterns.com/patterns/stucco.png*/
+    color: #013838;
+  }
+  .slides td {
+    padding-left:15px;
+  }
+  #slides {
+    width:100%;
   }
   .sharebox {
-    background-image: url('http://subtlepatterns.com/patterns/xv.png');
+    background-image: url('http://subtlepatterns.com/patterns/green-fibers.png');/*http://subtlepatterns.com/patterns/xv.png*/
+    color:mintcream;
+    text-align:right;
   }
-  table {
+  header table, .slides, .sharebox {
     width:100%;
   }
   .slide_img {
@@ -247,7 +267,12 @@ td { vertical-align: middle; }
       opacity:1;
       filter:Alpha(opacity=100);
   }
-
+  .content {
+    position:absolute;
+    text-align:justified;
+    left:5%;
+    right:5%;
+  }
 
 
 

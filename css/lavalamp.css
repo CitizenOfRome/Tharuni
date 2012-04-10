@@ -1,7 +1,7 @@
         .lavaLampBottomStyle {
             position: relative;
             height: 29px;
-            width: 421px;
+            width: 821px;
             background-color: inherit;
             padding: 15px;
             margin: 10px 0;
@@ -13,7 +13,7 @@
                     list-style: none;
                 }
                     .lavaLampBottomStyle li.back {
-                        border-bottom: 5px solid navy;
+                        border-bottom: 5px solid azure;
                         width: 9px;
                         height: 30px;
                         z-index: 8;
@@ -22,7 +22,7 @@
                     .lavaLampBottomStyle li a {
                         font: bold 14px arial;
                         text-decoration: none;
-                        color: #000;
+                        color: inherit;
                         outline: none;
                         text-align: center;
                         top: 7px;
@@ -39,3 +39,7 @@
                         .lavaLampBottomStyle li a:hover, .lavaLampBottomStyle li a:active, .lavaLampBottomStyle li a:visited {
                             border: none;
                         }                     
+                        
+.subLava {
+    color:LemonChiffon;
+}
