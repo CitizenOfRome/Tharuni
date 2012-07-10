@@ -1,2 +1,0 @@
-# Tharuni.org
-
