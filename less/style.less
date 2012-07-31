@@ -7,6 +7,19 @@ body {
 
 @import "bootstrap/responsive.less";
 
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  box-shadow:         @style @c;
+  -webkit-box-shadow: @style @c;
+  -moz-box-shadow:    @style @c;
+}
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(255, 255, 255, @alpha));
+}
+.rounded-corners (@radius: 5px) {
+  border-radius: @radius;
+  -webkit-border-radius: @radius;
+  -moz-border-radius: @radius;
+}
 
 /* ===== Primary Styles ========================================================
    Author: DoersGuild.com
@@ -46,4 +59,11 @@ a.menu:after, .dropdown-toggle:after {
  color: whitesmoke;
  background-color: black !important; 
  color: whitesmoke !important;
+}
+.logo{
+  .box-shadow(0 0 15px, 90%);
+  .rounded-corners(7px);
+}
+.icons li{ 
+  float:right;
 }
