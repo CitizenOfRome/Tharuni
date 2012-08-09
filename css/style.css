@@ -862,4 +862,6 @@ a.menu:after,.dropdown-toggle:after{content:none;}
 .intro{color:white;}
 .lead{color:#5AB704;}
 .hero-font{color:black;}
-a{color:white;text-decoration:none;}
+a{color:#5AB704;text-decoration:none;}
+.link{color:#5AB704;}
+.carousel-no-margin{margin-bottom:0px;}
