@@ -3,6 +3,7 @@
 body {
   padding-top: 60px;
   padding-bottom: 40px;
+  color:black;
 }
 
 @import "bootstrap/responsive.less";
@@ -49,16 +50,40 @@ a.menu:after, .dropdown-toggle:after {
 }
 
 .hero-unit{
- background-color: #E04B04; 
- color: ghostWhite;
- background-color: #E04B04 !important; 
- color: ghostWhite !important;
+  color:white;
+  background-color: #0196FD;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#0196FD), to(#007DEB));
+  background-image: -webkit-linear-gradient(#0196FD, #007DEB);
+  background-image: -moz-linear-gradient(top, #0196FD, #007DEB);
+  background-image: -ms-linear-gradient(#0196FD, #007DEB);
+  background-image: -o-linear-gradient(#0196FD, #007DEB);
+  background-image: linear-gradient(#0196FD, #007DEB);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0196FD', endColorstr='#007DEB');
+  zoom: 1; 
 }
-.well{
- background-color: black; 
- color: whitesmoke;
- background-color: black !important; 
- color: whitesmoke !important;
+
+.well1{
+  min-height: 20px;
+  padding: 19px;
+  margin-bottom: 20px;
+  background-color: @green;
+  border: 1px solid #eee;
+  border: 1px solid rgba(0,0,0,.05);
+  .border-radius(4px);
+  .box-shadow(inset 0 1px 1px rgba(0,0,0,.05));
+  background-image: -webkit-gradient(linear, left top, left bottom, from(@black), to(@green));
+  background-image: -webkit-linear-gradient(@black, @green);
+  background-image: -moz-linear-gradient(top, @black, @green);
+  background-image: -ms-linear-gradient(@black, @green);
+  background-image: -o-linear-gradient(@black, @green);
+  background-image: linear-gradient(@black, @green);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0196FD', endColorstr='#007DEB');
+  zoom: 1; 
+  blockquote {
+    border-color: #ddd;
+    border-color: rgba(0,0,0,.15);
+  }
+ 
 }
 .logo{
   .box-shadow(0 0 25px, 70%);
@@ -66,4 +91,33 @@ a.menu:after, .dropdown-toggle:after {
 }
 .icons li{ 
   float:right;
+}
+.well{
+background: green;
+background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#fff));
+background: -webkit-linear-gradient(#fff, #fff);
+background: -moz-linear-gradient(top, #fff, #fff);
+background: -ms-linear-gradient(#fff, #fff);
+background: -o-linear-gradient(#fff, #fff);
+background: linear-gradient(#fff, #fff);
+filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#fff', endColorstr='#fff');
+zoom: 1;
+
+
+}
+
+.intro{
+color:white;
+}
+.lead{
+  
+  color:#5AB704;
+}
+.hero-font{
+  
+color:black;  
+}
+a {
+color: white;
+text-decoration: none;
 }

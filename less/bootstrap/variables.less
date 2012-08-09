@@ -22,7 +22,7 @@
 // Accent colors
 // -------------------------
 @blue:                  #049cdb;
-@blueDark:              #0064cd;
+@blueDark:              #3B5998;
 @green:                 #46a546;
 @red:                   #9d261d;
 @yellow:                #ffc40d;
@@ -30,23 +30,26 @@
 @pink:                  #c3325f;
 @purple:                #7a43b6;
 @darkBlue:				      #3B5998;
-
+@greenli: #5AB704;
 //Liner-Background
 .triplegreen{
-  background-color: @green;
-  background-image: -webkit-linear-gradient(left, #5D9C60,white,#6BC748,white,#3C8342);
-  background-image: -moz-linear-gradient(left, #5D9C60,white,#6BC748,white,#3C8342);
-  background-image: -o-linear-gradient(left, #5D9C60,white,#6BC748,white,#3C8342);
-  background-image: linear-gradient(left, #5D9C60,white,#6BC748,white,#3C8342);
+ background: @green;
+background: -webkit-gradient(linear, left top, left bottom, from(#5AB704), to(#135887));
+background: -webkit-linear-gradient(#0A284B, #135887);
+background: -moz-linear-gradient(top, #0A284B, #135887);
+background: -ms-linear-gradient(#0A284B, #135887);
+background: -o-linear-gradient(#0A284B, #135887);
+background: linear-gradient(#0A284B, #135887);
+filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#0A284B', endColorstr='#135887');
+zoom: 1;
 }
 .tripleblue{
-  background-color: @darkBlue;
-  background-image: -webkit-linear-gradient(left, @blueDark,white,@darkBlue,white,@blueDark);
-  background-image: -moz-linear-gradient(left, @blueDark,white,@darkBlue,white,@blueDark);
-  background-image: -o-linear-gradient(left, @blueDark,white,@darkBlue,white,@blueDark);
-  background-image: linear-gradient(left, @blueDark,white,@darkBlue,white,@blueDark);
+  background-color: @greenli;
+  background-image: -webkit-linear-gradient(left, @greenli,white,@greenli,white,@greenli);
+  background-image: -moz-linear-gradient(left, @greenli,white,@greenli,white,@greenli);
+  background-image: -o-linear-gradient(left, @greenli,white,@greenli,white,@greenli);
+  background-image: linear-gradient(left, @greenli,white,@greenli,white,@greenli);
 }
-
 // Scaffolding
 // -------------------------
 @bodyBackground:        @white;
