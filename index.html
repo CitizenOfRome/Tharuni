@@ -31,17 +31,8 @@
 	</head>
 	<body>
 		<div id="fb-root"></div>
-		<script>
-			( function(d, s, id) {
-					var js, fjs = d.getElementsByTagName(s)[0];
-					if (d.getElementById(id))
-						return;
-					js = d.createElement(s);
-					js.id = id;
-					js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-					fjs.parentNode.insertBefore(js, fjs);
-				}(document, 'script', 'facebook-jssdk'));
-		</script>
+		<div id="fb-root"></div>
+
 		<!-- data-spy="scroll" -->
 		<!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
 
@@ -111,11 +102,30 @@
 									</li>
 								</ul>
 							</li>
-							<li>
-								<a href="#solutions">Innovations</a>
+							<li class="dropdown" id="innovations_menu">
+								<a
+								class="dropdown-toggle" data-toggle="dropdown" href="#solutions"
+								data-target="#innovations_menu"
+								onclick="JavaScript:window.location='#solutions';">Innovations <b class="caret"></b> </a>
+
+								<ul class="dropdown-menu">
+									<li>
+										<a href='#Balika_Sanghas'>Balika Sanghas</a>
+									</li>
+									<li>
+										<a href='#Puppetry_and_Folk_Art'>Puppetry and Folk Art</a>
+									</li>
+									<li>
+										<a href='#Child_Film_Makers'>Child Film Makers</a>
+									</li>
+									<li>
+										<a href='#Samagra_Grameena_Vikasam_Programme'>Samagra Grameena Vikasam Programme</a>
+									</li>
+
+								</ul>
 							</li>
 							<li>
-								<a href="#media">Media Coverage</a>
+								<a href="#media">Media</a>
 							</li>
 							<li>
 								<a href="#case_studies">Case Studies</a>
@@ -1304,7 +1314,7 @@
 
 			</section>
 
-			<section id="solutions" data-role="page">
+			<section id="Balika_Sanghas" data-role="page">
 				<p class="lead">
 					Tharuni’s Novel Initiatives:
 				</p>
@@ -1352,7 +1362,9 @@
 					</div>
 
 				</div>
-				<br>
+			</section>
+
+			<section id="Puppetry_and_Folk_Art" data-role="page">
 				<div class="row-fluid">
 					<div class="span6">
 						<p class="lead">
@@ -1389,6 +1401,8 @@
 					</div>
 
 				</div>
+			</section>
+			<section id="Child_Film_Makers" data-role="page">
 				<div class="row-fluid">
 					<div class="span6">
 						<p class="lead">
@@ -1445,6 +1459,8 @@
 					</div>
 
 				</div>
+			</section>
+			<section id="Samagra_Grameena_Vikasam_Programme" data-role="page">
 				<div class="row-fluid">
 					<div class="span6">
 						<p class="lead">
@@ -1506,8 +1522,8 @@
 					</div>
 
 				</div>
-
 			</section>
+
 			<section id="media" data-role="page">
 				<div class="span11 container-fluid">
 					<div id="player" class="row-fluid">
@@ -1533,7 +1549,7 @@
 						<li class="span5">
 							<div class="thumbnail">
 								<img src="./img/viewer.png" alt="">
-								
+
 								<p>
 									Kids hlp kids campaign
 									<a href="#"><b>Read More>></b></a>
@@ -1546,7 +1562,7 @@
 			</section>
 
 			<section id="support" data-role="page">
-				<div class="row-fluid">
+				<div class="row-fluid " >
 					<div class="span7">
 						<p class="lead">
 							How can you support Tharuni:
@@ -1576,8 +1592,9 @@
 							payable at Hyderabad / Warangal.
 						</p>
 					</div>
-					<div class="span5 well">
-						<div><div class="fb-like" data-href="http://www.facebook.com/Tharuni.org" data-send="true" data-width="450" data-show-faces="true"></div></div>
+
+					<div class="span5">
+
 						<a href="https://twitter.com/Tharuni_org" class="twitter-follow-button" data-show-count="false" data-size="large">Follow @Tharuni_org</a>
 						<script>
 							! function(d, s, id) {
@@ -1595,11 +1612,22 @@
 							<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
 							<g:plus href="https://plus.google.com/106252641670484238537"></g:plus>
 						</div>
+						<div>
+							<div class="fb-like-box" data-href="http://www.facebook.com/tharuni.org" data-width="292" data-show-faces="true" data-stream="true" data-header="true"></div>
+						</div>
 
-						
-
+						<div id="ammadoGivingWidget"></div>
+						<script type="text/javascript">
+							var s = document.createElement('script');
+							s.type = 'text/javascript';
+							s.async = true;
+							s.src = 'https://www.ammado.com/nonprofit/128497/givingwidget/embed.js?renderTo=ammadoGivingWidget';
+							var f = document.getElementsByTagName('script')[0];
+							f.parentNode.insertBefore(s, f);
+						</script>
 					</div>
 				</div>
+
 			</section>
 			<section id="contact" data-role="page">
 				<address>
@@ -1615,13 +1643,13 @@
 						<br />
 						Telephone No.:
 						<tel>
-							00-91-0870-2554454
+							0870-2547734
 						</tel>
 						<br />
 						Contact: Dr Mamatha Raghuveer
 						<br />
 						email: <a
-						href="mailto:amamatha06@yahoo.co.in">amamatha06@yahoo.co.in</a>
+						href="mailto:mamatha@tharuni.org">mamatha@tharuni.org</a>
 					</p>
 					<br />
 					<p>
@@ -1638,7 +1666,7 @@
 							00-91-040-24072038
 						</tel>
 						<br />
-						email: <a href="mailto:amamatha06@yahoo.co.in">tharuni@lycos.com</a>
+						email: <a href="mailto:mamatha@tharuni.org">mamatha@tharuni.org</a>
 						<br />
 						website: <a href="http://tharuni.org">tharuni.org</a>
 					</p>
@@ -1831,6 +1859,17 @@
 			});
 
 		</script>
-		
+		<div id="fb-root"></div>
+		<script>
+			( function(d, s, id) {
+					var js, fjs = d.getElementsByTagName(s)[0];
+					if (d.getElementById(id))
+						return;
+					js = d.createElement(s);
+					js.id = id;
+					js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+					fjs.parentNode.insertBefore(js, fjs);
+				}(document, 'script', 'facebook-jssdk'));
+		</script>
 	</body>
 </html>
