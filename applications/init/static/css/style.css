@@ -865,9 +865,9 @@ a.menu:after,.dropdown-toggle:after{content:none;}
 .hero-font{color:black;}
 a{color:#5AB704;text-decoration:none;}
 .link{color:#5AB704;}
-.fullscale{height:100%;width:100%;min-height:300px;}
-.thumb-holder{display:inline-block;width:150px;max-width:100%;text-align:center;}
+.fullscale{height:100%;width:100%;min-height:380px;}
+.thumb-holder{display:inline-block;width:170px;max-width:100%;text-align:center;float:left;height:230px;}
 .carousel-no-margin{margin-bottom:0px;}
 .thumbnails{margin-left:50px;}
-.thumbnail{padding:10px;}
+.thumbnail{padding:10px;border:none;}
 .text{color:white;}
