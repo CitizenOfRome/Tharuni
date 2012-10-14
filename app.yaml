@@ -1,0 +1,52 @@
+#  For Google App Engine deployment, copy this file to app.yaml
+#  and edit as required
+#  See http://code.google.com/appengine/docs/python/config/appconfig.html
+#  and http://web2py.com/book/default/chapter/11?search=app.yaml
+
+application: tharunionline
+version: 2
+api_version: 1
+
+# use this line for Python 2.5
+#
+# runtime: python
+
+# use these lines for Python 2.7
+# upload app with: appcfg.py update web2py (where 'web2py' is web2py's root directory)
+#
+runtime: python27
+threadsafe: true    # true for WSGI & concurrent requests (Python 2.7 only)
+
+default_expiration: "960h"   # for static files
+
+handlers:
+
+- url: /(?P<a>.+?)/static/(?P<b>.+)
+  static_files: applications/\1/static/\2
+  upload: applications/(.+?)/static/(.+)
+  secure: optional
+
+- url: /favicon.ico
+  static_files: applications/init/static/img/logo.png
+  upload: applications/init/static/img/logo.png
+
+- url: /robots.txt
+  static_files: applications/init/static/robots.txt
+  upload: applications/init/static/robots.txt
+
+- url: .*
+  # script: gaehandler.py         # CGI
+  script: gaehandler.wsgiapp    # WSGI (Python 2.7 only)
+  secure: optional
+
+admin_console:
+  pages:
+  - name: Appstats
+    url: /_ah/stats
+
+builtins:
+- remote_api: on
+#- datastore_admin: on
+- appstats: on
+- admin_redirect: on
+- deferred: on

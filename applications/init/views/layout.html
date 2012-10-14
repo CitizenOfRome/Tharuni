@@ -1,0 +1,178 @@
+<!doctype html> <!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js" lang="en">
+    <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+
+        <title>Tharuni</title>
+        <meta name="description" content="Tharuni: Working towards Empowerment of Adolescent Girls Women and the Aged">
+        <meta name="author" content="Doers' Guild">
+
+        <meta name="viewport" content="width=device-width">
+
+        <link rel="icon" type="image/x-icon" href="{{=settings.path_to.static}}/img/logo.png" />
+
+        <!-- <link rel="stylesheet/less" href="less/style.less">
+        <script src="js/libs/less-1.3.0.min.js"></script>
+
+        Use SimpLESS (Win/Linux/Mac) or LESS.app (Mac) to compile your .less files
+        to style.css, and replace the 2 lines above by this one:
+        -->
+
+        <link rel="stylesheet" href="{{=settings.path_to.static}}/css/style.css">
+        <link rel="stylesheet" media="screen" href="{{=settings.path_to.static}}/css/flexslider.css"/>
+
+        <script src="{{=settings.path_to.static}}/js/libs/modernizr-2.5.3-respond-1.1.0.min.js"></script>
+
+    </head>
+    <body>
+
+        <!-- data-spy="scroll" -->
+        <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a> to experience this site.</p><![endif]-->
+
+        <div id="mainNav" class="navbar">
+            <div class="navbar-inner">
+                <div class="container">
+                    <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse"> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </a><a class="brand" href="{{=settings.path_to.default_handler}}/index#intro">Tharuni</a>
+                    <div class="nav-collapse">
+                        <ul class="nav">
+                            <li class="active">
+                                <a href="{{=settings.path_to.default_handler}}/index#intro">Home</a>
+                            </li>
+                            <li >
+                                <a href="{{=settings.path_to.default_handler}}/about#about">About Us</a>
+
+                            </li>
+                            <li class="dropdown" id="tackled_menu">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="{{=settings.path_to.default_handler}}/issues#tackled" data-target="#tackled_menu" onclick="JavaScript:window.location='{{=settings.path_to.default_handler}}/issues#issues';">Issues <b class="caret"></b> </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/child_marriages#child_marriages'>Combating Child
+                                        Marriages through</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/child_labour#child_labour'>Fighting against Child
+                                        Labour</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/anti_trafficking#anti_trafficking'>Battling Trafficking</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/education#education_for_girls'>Education for Girls</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/livelihoods#livelihoods'>Livelihoods</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/hiv_aids#hiv_aids_campaign'>HIV/AIDS Campaign</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/anti_infanticide#anti_infanticide'>Infanticide & Foeticide</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/tourism#rural_tourism'>Rural Tourism</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/aged#supporting_aged'>Supporting the Aged</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown" id="innovations_menu">
+                                <a class="dropdown-toggle" data-toggle="dropdown" href="{{=settings.path_to.default_handler}}/balika_sanghas#Balika_Sanghas" data-target="#innovations_menu" onclick="JavaScript:window.location='{{=settings.path_to.default_handler}}/balika_sanghas#Balika_Sanghas';">Innovations <b class="caret"></b> </a>
+
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/balika_sanghas#Balika_Sanghas'>Balika Sanghas</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/folk_art#Puppetry_and_Folk_Art'>Puppetry and Folk Art</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/child_film#Child_Film_Makers'>Child Film Makers</a>
+                                    </li>
+                                    <li>
+                                        <a href='{{=settings.path_to.default_handler}}/grameen_vikas#Samagra_Grameena_Vikasam_Programme'>Samagra Grameena Vikasam Programme</a>
+                                    </li>
+
+                                </ul>
+                            </li>
+                            <li>
+                                <a href="{{=settings.path_to.default_handler}}/media#media">Media</a>
+                            </li>
+                            <li>
+                                <a href="{{=settings.path_to.default_handler}}/case_studies#case_studies">Case Studies</a>
+                            </li>
+                            <li>
+                                <a href="{{=settings.path_to.default_handler}}/campaign#campaign">Campaigns</a>
+                            </li>
+                            <li>
+                                <a href="{{=settings.path_to.default_handler}}/support#support">Support</a>
+                            </li>
+                            <li>
+                                <a href="{{=settings.path_to.default_handler}}/contact#contact">Contact</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!--/.nav-collapse -->
+                </div>
+            </div>
+        </div>
+
+        <div class="container well">
+            {{include}}
+
+            <hr>
+
+            <footer>
+                <p class="pull-right">
+                    &copy; Tharuni, 2012
+                </p>
+            </footer>
+
+        </div>
+        <!-- /container -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script>
+            window.jQuery || document.write('<script src="{{=settings.path_to.static}}/js/libs/jquery-1.7.2.min.js"><\/script>')
+        </script>
+        <script src="{{=settings.path_to.static}}/js/libs/jquery.flexslider-min.js" type="text/javascript"></script>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('.image-slider').flexslider({
+                    animation : "fade",
+                    slideshowSpeed : 4000,
+                    animationDuration : 1000,
+                    controlNav : true,
+                    keyboardNav : true,
+                    directionNav : false,
+                    pauseOnHover : true,
+                    pauseOnAction : true
+                });
+
+            });
+        </script>
+        <!-- scripts concatenated and minified via ant build script-->
+        <script src="{{=settings.path_to.static}}/js/libs/bootstrap/bootstrap.min.js"></script>
+
+        <script src="{{=settings.path_to.static}}/js/libs/jquery.hashchange.min.js"></script>
+
+        <script src="{{=settings.path_to.static}}/js/plugins.js"></script>
+
+        <script src="{{=settings.path_to.static}}/js/script.js"></script>
+        <!-- end scripts-->
+
+        <script>
+            var _gaq = [['_setAccount', 'UA-XXXXX-X'], ['_trackPageview']]; ( function(d, t) {
+                    var g = d.createElement(t), s = d.getElementsByTagName(t)[0];
+                    g.src = ('https:' == location.protocol ? '//ssl' : '//www') + '.google-analytics.com/ga.js';
+                    s.parentNode.insertBefore(g, s)
+                }(document, 'script'));
+        </script>
+
+    </body>
+</html>
+
