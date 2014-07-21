@@ -15,7 +15,7 @@ api_version: 1
 # upload app with: appcfg.py update web2py (where 'web2py' is web2py's root directory)
 #
 runtime: python27
-threadsafe: true    # true for WSGI & concurrent requests (Python 2.7 only)
+threadsafe: false    # true for WSGI & concurrent requests (Python 2.7 only)
 
 default_expiration: "960h"   # for static files
 
@@ -35,8 +35,8 @@ handlers:
   upload: applications/init/static/robots.txt
 
 - url: .*
-  # script: gaehandler.py         # CGI
-  script: gaehandler.wsgiapp    # WSGI (Python 2.7 only)
+  script: gaehandler.py         # CGI
+  # script: gaehandler.wsgiapp    # WSGI (Python 2.7 only)
   secure: optional
 
 admin_console:

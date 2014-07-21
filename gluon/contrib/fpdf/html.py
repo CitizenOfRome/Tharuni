@@ -26,17 +26,17 @@ def hex2dec(color = "#000000"):
 class HTML2FPDF(HTMLParser):
     "Render basic HTML to FPDF"
 
-    def __init__(self, pdf):
+    def __init__(self, pdf, image_map=None):
         HTMLParser.__init__(self)
         self.style = {}
         self.pre = False
         self.href = ''
         self.align = ''
         self.page_links = {}
-        self.font_list = ("times","courier", "helvetica")
         self.font = None
-        self.font_stack = []
+        self.font_stack = [] 
         self.pdf = pdf
+        self.image_map = image_map or (lambda src: src)
         self.r = self.g = self.b = 0
         self.indent = 0
         self.bullet = []
@@ -54,7 +54,8 @@ class HTML2FPDF(HTMLParser):
         self.thead = None
         self.tfoot = None
         self.theader_out = self.tfooter_out = False
-
+        self.hsize = dict(h1=2, h2=1.5, h3=1.17, h4=1, h5=0.83, h6=0.67)
+        
     def width2mm(self, length):
         if length[-1]=='%':
             total = self.pdf.w - self.pdf.r_margin - self.pdf.l_margin
@@ -87,7 +88,7 @@ class HTML2FPDF(HTMLParser):
             else:
                 self.set_style('B',True)
                 border = border or 'B'
-                align = 'C'
+                align = self.td.get('align', 'C')[0].upper()
             bgcolor = hex2dec(self.td.get('bgcolor', self.tr.get('bgcolor', '')))
             # parsing table header/footer (drawn later):
             if self.thead is not None:
@@ -101,13 +102,13 @@ class HTML2FPDF(HTMLParser):
                 self.pdf.add_page()
                 self.theader_out = self.tfooter_out = False
             if self.tfoot is None and self.thead is None:
-                if not self.theader_out:
+                if not self.theader_out: 
                     self.output_table_header()
                 self.box_shadow(w, h, bgcolor)
                 if DEBUG: print "td cell", self.pdf.x, w, txt, "*"
                 self.pdf.cell(w,h,txt,border,0,align)
         elif self.table is not None:
-            # ignore anything else than td inside a table
+            # ignore anything else than td inside a table 
             pass
         elif self.align:
             if DEBUG: print "cell", txt, "*"
@@ -142,7 +143,7 @@ class HTML2FPDF(HTMLParser):
             self.pdf.set_x(self.table_offset)
             #self.pdf.set_x(x)
         self.theader_out = True
-
+        
     def output_table_footer(self):
         if self.tfooter:
             x = self.pdf.x
@@ -156,7 +157,7 @@ class HTML2FPDF(HTMLParser):
         if int(self.table.get('border', 0)):
             self.output_table_sep()
         self.tfooter_out = True
-
+            
     def output_table_sep(self):
         self.pdf.set_x(self.table_offset)
         x1 = self.pdf.x
@@ -178,8 +179,8 @@ class HTML2FPDF(HTMLParser):
             self.pdf.ln(5)
             if attrs:
                 if attrs: self.align = attrs.get('align')
-        if tag in ('h1', 'h2', 'h3', 'h4', 'h5', 'h6'):
-            k = (2, 1.5, 1.17, 1, 0.83, 0.67)[int(tag[1])]
+        if tag in self.hsize:
+            k = self.hsize[tag]
             self.pdf.ln(5*k)
             self.pdf.set_text_color(150,0,0)
             self.pdf.set_font_size(12 * k)
@@ -218,7 +219,7 @@ class HTML2FPDF(HTMLParser):
                 self.color = hex2dec(attrs['color'])
                 self.set_text_color(*color)
                 self.color = color
-            if 'face' in attrs and attrs['face'].lower() in self.font_list:
+            if 'face' in attrs:
                 face = attrs.get('face').lower()
                 self.pdf.set_font(face)
                 self.font_face = face
@@ -265,7 +266,8 @@ class HTML2FPDF(HTMLParser):
                 h = px2mm(attrs.get('height',0))
                 if self.align and self.align[0].upper() == 'C':
                     x = (self.pdf.w-x)/2.0 - w/2.0
-                self.pdf.image(attrs['src'], x, y, w, h, link=self.href)
+                self.pdf.image(self.image_map(attrs['src']),
+                               x, y, w, h, link=self.href)
                 self.pdf.set_x(x+w)
                 self.pdf.set_y(y+h)
         if tag=='b' or tag=='i' or tag=='u':
@@ -335,7 +337,7 @@ class HTML2FPDF(HTMLParser):
             if face:
                 self.pdf.set_text_color(0,0,0)
                 self.color = None
-            self.set_font(face, size)
+            self.set_font(face, size)                
             self.font = None
         if tag=='center':
             self.align = None
@@ -352,7 +354,7 @@ class HTML2FPDF(HTMLParser):
         self.set_style('u', False)
         self.set_style('b', False)
         self.set_style('i', False)
-        self.set_text_color()
+        self.set_text_color()        
 
     def set_style(self, tag=None, enable=None):
         #Modify style and select corresponding font
@@ -374,7 +376,7 @@ class HTML2FPDF(HTMLParser):
             self.r = r
             self.g = g
             self.b = b
-
+    
     def put_link(self, url, txt):
         #Put a hyperlink
         self.set_text_color(0,0,255)
@@ -389,9 +391,8 @@ class HTML2FPDF(HTMLParser):
         self.pdf.ln(3)
 
 class HTMLMixin(object):
-    def write_html(self, text):
+    def write_html(self, text, image_map=None):
         "Parse HTML and convert it to PDF"
-        h2p = HTML2FPDF(self)
+        h2p = HTML2FPDF(self, image_map)
         h2p.feed(text)
-
 

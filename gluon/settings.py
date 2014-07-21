@@ -7,7 +7,7 @@ License: LGPLv3 (http://www.gnu.org/licenses/lgpl.html)
 import os
 import sys
 import platform
-from storage import Storage
+from gluon.storage import Storage
 
 global_settings = Storage()
 settings = global_settings  # legacy compatibility
@@ -28,7 +28,7 @@ global_settings.app_folders = set()
 global_settings.debugging = False
 
 global_settings.is_pypy = \
-    hasattr(platform,'python_implementation') and \
+    hasattr(platform, 'python_implementation') and \
     platform.python_implementation() == 'PyPy'
 
 global_settings.is_jython = \
@@ -36,5 +36,5 @@ global_settings.is_jython = \
     hasattr(sys, 'JYTHON_JAR') or \
     str(sys.copyright).find('Jython') > 0
 
-
-
+global_settings.is_source = os.path.exists(os.path.join(
+        global_settings.gluon_parent,'web2py.py'))

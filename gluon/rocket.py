@@ -2,6 +2,7 @@
 
 # This file is part of the Rocket Web Server
 # Copyright (c) 2011 Timothy Farrell
+# Modified by Massimo Di Pierro
 
 # Import System Modules
 import sys
@@ -9,26 +10,27 @@ import errno
 import socket
 import logging
 import platform
-import traceback
 
 # Define Constants
-VERSION = '1.2.4'
+VERSION = '1.2.6'
 SERVER_NAME = socket.gethostname()
 SERVER_SOFTWARE = 'Rocket %s' % VERSION
-HTTP_SERVER_SOFTWARE = '%s Python/%s' % (SERVER_SOFTWARE, sys.version.split(' ')[0])
+HTTP_SERVER_SOFTWARE = '%s Python/%s' % (
+    SERVER_SOFTWARE, sys.version.split(' ')[0])
 BUF_SIZE = 16384
-SOCKET_TIMEOUT = 10 # in secs
-THREAD_STOP_CHECK_INTERVAL = 1 # in secs, How often should threads check for a server stop message?
-IS_JYTHON = platform.system() == 'Java' # Handle special cases for Jython
+SOCKET_TIMEOUT = 10  # in secs
+THREAD_STOP_CHECK_INTERVAL = 1  # in secs, How often should threads check for a server stop message?
+IS_JYTHON = platform.system() == 'Java'  # Handle special cases for Jython
 IGNORE_ERRORS_ON_CLOSE = set([errno.ECONNABORTED, errno.ECONNRESET])
 DEFAULT_LISTEN_QUEUE_SIZE = 5
 DEFAULT_MIN_THREADS = 10
 DEFAULT_MAX_THREADS = 0
-DEFAULTS = dict(LISTEN_QUEUE_SIZE = DEFAULT_LISTEN_QUEUE_SIZE,
-                MIN_THREADS = DEFAULT_MIN_THREADS,
-                MAX_THREADS = DEFAULT_MAX_THREADS)
+DEFAULTS = dict(LISTEN_QUEUE_SIZE=DEFAULT_LISTEN_QUEUE_SIZE,
+                MIN_THREADS=DEFAULT_MIN_THREADS,
+                MAX_THREADS=DEFAULT_MAX_THREADS)
 
 PY3K = sys.version_info[0] > 2
+
 
 class NullHandler(logging.Handler):
     "A Logging handler to prevent library errors."
@@ -76,8 +78,8 @@ __all__ = ['VERSION', 'SERVER_SOFTWARE', 'HTTP_SERVER_SOFTWARE', 'BUF_SIZE',
            'IS_JYTHON', 'IGNORE_ERRORS_ON_CLOSE', 'DEFAULTS', 'PY3K', 'b', 'u',
            'Rocket', 'CherryPyWSGIServer', 'SERVER_NAME', 'NullHandler']
 
-# Monolithic build...end of module: rocket\__init__.py
-# Monolithic build...start of module: rocket\connection.py
+# Monolithic build...end of module: rocket/__init__.py
+# Monolithic build...start of module: rocket/connection.py
 
 # Import System Modules
 import sys
@@ -92,6 +94,7 @@ except ImportError:
 # package imports removed in monolithic build
 # TODO - This part is still very experimental.
 #from .filelike import FileLikeSocket
+
 
 class Connection(object):
     __slots__ = [
@@ -114,7 +117,7 @@ class Connection(object):
     ]
 
     def __init__(self, sock_tuple, port, secure=False):
-        self.client_addr, self.client_port = sock_tuple[1]
+        self.client_addr, self.client_port = sock_tuple[1][:2]
         self.server_port = port
         self.socket = sock_tuple[0]
         self.start_time = time.time()
@@ -129,13 +132,32 @@ class Connection(object):
 
         self.socket.settimeout(SOCKET_TIMEOUT)
 
-        self.sendall = self.socket.sendall
         self.shutdown = self.socket.shutdown
         self.fileno = self.socket.fileno
         self.setblocking = self.socket.setblocking
         self.recv = self.socket.recv
         self.send = self.socket.send
         self.makefile = self.socket.makefile
+
+        if sys.platform == 'darwin':
+            self.sendall = self._sendall_darwin
+        else:
+            self.sendall = self.socket.sendall
+
+    def _sendall_darwin(self, buf):
+        pending = len(buf)
+        offset = 0
+        while pending:
+            try:
+                sent = self.socket.send(buf[offset:])
+                pending -= sent
+                offset += sent
+            except socket.error:
+                import errno
+                info = sys.exc_info()
+                if info[1].args[0] != errno.EAGAIN:
+                    raise
+        return offset
 
 # FIXME - this is not ready for prime-time yet.
 #    def makefile(self, buf_size=BUF_SIZE):
@@ -153,9 +175,8 @@ class Connection(object):
                     pass
         self.socket.close()
 
-
-# Monolithic build...end of module: rocket\connection.py
-# Monolithic build...start of module: rocket\filelike.py
+# Monolithic build...end of module: rocket/connection.py
+# Monolithic build...start of module: rocket/filelike.py
 
 # Import System Modules
 import socket
@@ -168,6 +189,7 @@ except ImportError:
         from StringIO import StringIO
 # Import Package Modules
 # package imports removed in monolithic build
+
 
 class FileLikeSocket(object):
     def __init__(self, conn, buf_size=BUF_SIZE):
@@ -277,8 +299,8 @@ class FileLikeSocket(object):
         self.conn = None
         self.content_length = None
 
-# Monolithic build...end of module: rocket\filelike.py
-# Monolithic build...start of module: rocket\futures.py
+# Monolithic build...end of module: rocket/filelike.py
+# Monolithic build...start of module: rocket/futures.py
 
 # Import System Modules
 import time
@@ -316,13 +338,12 @@ class WSGIFuture(Future):
         else:
             return super(WSGIFuture, self).set_running_or_notify_cancel()
 
-
     def remember(self, name, lifespan=None):
         self._lifespan = lifespan or self._lifespan
 
         if name in self._mem_dict:
-            raise NameError('Cannot remember future by name "%s".  ' % name + \
-                            'A future already exists with that name.' )
+            raise NameError('Cannot remember future by name "%s".  ' % name +
+                            'A future already exists with that name.')
         self._name = name
         self._mem_dict[name] = self
 
@@ -332,6 +353,7 @@ class WSGIFuture(Future):
         if self._name in self._mem_dict and self._mem_dict[self._name] is self:
             del self._mem_dict[self._name]
             self._name = None
+
 
 class _WorkItem(object):
     def __init__(self, future, fn, args, kwargs):
@@ -352,6 +374,7 @@ class _WorkItem(object):
         else:
             self.future.set_result(result)
 
+
 class WSGIExecutor(ThreadPoolExecutor):
     multithread = True
     multiprocess = False
@@ -365,7 +388,8 @@ class WSGIExecutor(ThreadPoolExecutor):
         if self._shutdown_lock.acquire():
             if self._shutdown:
                 self._shutdown_lock.release()
-                raise RuntimeError('Cannot schedule new futures after shutdown')
+                raise RuntimeError(
+                    'Cannot schedule new futures after shutdown')
 
             f = WSGIFuture(self.futures)
             w = _WorkItem(f, fn, args, kwargs)
@@ -376,6 +400,7 @@ class WSGIExecutor(ThreadPoolExecutor):
             return f
         else:
             return False
+
 
 class FuturesMiddleware(object):
     "Futures middleware that adds a Futures Executor to the environment"
@@ -388,8 +413,8 @@ class FuturesMiddleware(object):
         environ["wsgiorg.futures"] = self.executor.futures
         return self.app(environ, start_response)
 
-# Monolithic build...end of module: rocket\futures.py
-# Monolithic build...start of module: rocket\listener.py
+# Monolithic build...end of module: rocket/futures.py
+# Monolithic build...start of module: rocket/listener.py
 
 # Import System Modules
 import os
@@ -404,10 +429,12 @@ try:
     has_ssl = True
 except ImportError:
     has_ssl = False
+
     class SSLError(socket.error):
         pass
 # Import Package Modules
 # package imports removed in monolithic build
+
 
 class Listener(Thread):
     """The Listener class is a class responsible for accepting connections
@@ -432,7 +459,10 @@ class Listener(Thread):
         self.err_log.addHandler(NullHandler())
 
         # Build the socket
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if ':' in self.addr:
+            listener = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        else:
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         if not listener:
             self.err_log.error("Failed to get socket.")
@@ -445,18 +475,18 @@ class Listener(Thread):
             elif not os.path.exists(interface[2]):
                 data = (interface[2], interface[0], interface[1])
                 self.err_log.error("Cannot find key file "
-                          "'%s'.  Cannot bind to %s:%s" % data)
+                                   "'%s'.  Cannot bind to %s:%s" % data)
                 return
             elif not os.path.exists(interface[3]):
                 data = (interface[3], interface[0], interface[1])
                 self.err_log.error("Cannot find certificate file "
-                          "'%s'.  Cannot bind to %s:%s" % data)
+                                   "'%s'.  Cannot bind to %s:%s" % data)
                 return
 
             if self.clientcert_req and not os.path.exists(interface[4]):
                 data = (interface[4], interface[0], interface[1])
                 self.err_log.error("Cannot find root ca certificate file "
-                          "'%s'.  Cannot bind to %s:%s" % data)
+                                   "'%s'.  Cannot bind to %s:%s" % data)
                 return
 
         # Set socket options
@@ -498,24 +528,22 @@ class Listener(Thread):
                 ca_certs = self.interface[4]
                 cert_reqs = ssl.CERT_OPTIONAL
                 sock = ssl.wrap_socket(sock,
-                                       keyfile = self.interface[2],
-                                       certfile = self.interface[3],
-                                       server_side = True,
-                                       cert_reqs = cert_reqs,
-                                       ca_certs = ca_certs,
-                                       ssl_version = ssl.PROTOCOL_SSLv23)
+                                       keyfile=self.interface[2],
+                                       certfile=self.interface[3],
+                                       server_side=True,
+                                       cert_reqs=cert_reqs,
+                                       ca_certs=ca_certs,
+                                       ssl_version=ssl.PROTOCOL_SSLv23)
             else:
                 sock = ssl.wrap_socket(sock,
-                                       keyfile = self.interface[2],
-                                       certfile = self.interface[3],
-                                       server_side = True,
-                                       ssl_version = ssl.PROTOCOL_SSLv23)
-
+                                       keyfile=self.interface[2],
+                                       certfile=self.interface[3],
+                                       server_side=True,
+                                       ssl_version=ssl.PROTOCOL_SSLv23)
         except SSLError:
             # Generally this happens when an HTTP request is received on a
             # secure socket. We don't do anything because it will be detected
             # by Worker and dealt with appropriately.
-            # self.err_log.error('SSL Error: %s' % traceback.format_exc())
             pass
 
         return sock
@@ -566,8 +594,9 @@ class Listener(Thread):
                                        self.secure))
 
             except socket.timeout:
-                # socket.timeout will be raised every THREAD_STOP_CHECK_INTERVAL
-                # seconds.  When that happens, we check if it's time to die.
+                # socket.timeout will be raised every
+                # THREAD_STOP_CHECK_INTERVAL seconds.  When that happens,
+                # we check if it's time to die.
 
                 if not self.ready:
                     if __debug__:
@@ -578,8 +607,8 @@ class Listener(Thread):
             except:
                 self.err_log.error(traceback.format_exc())
 
-# Monolithic build...end of module: rocket\listener.py
-# Monolithic build...start of module: rocket\main.py
+# Monolithic build...end of module: rocket/listener.py
+# Monolithic build...start of module: rocket/main.py
 
 # Import System Modules
 import sys
@@ -596,27 +625,24 @@ except ImportError:
 # Import Package Modules
 # package imports removed in monolithic build
 
-
-
-
-
 # Setup Logging
 log = logging.getLogger('Rocket')
 log.addHandler(NullHandler())
+
 
 class Rocket(object):
     """The Rocket class is responsible for handling threads and accepting and
     dispatching connections."""
 
     def __init__(self,
-                 interfaces = ('127.0.0.1', 8000),
-                 method = 'wsgi',
-                 app_info = None,
-                 min_threads = None,
-                 max_threads = None,
-                 queue_size = None,
-                 timeout = 600,
-                 handle_signals = True):
+                 interfaces=('127.0.0.1', 8000),
+                 method='wsgi',
+                 app_info=None,
+                 min_threads=None,
+                 max_threads=None,
+                 queue_size=None,
+                 timeout=600,
+                 handle_signals=True):
 
         self.handle_signals = handle_signals
         self.startstop_lock = Lock()
@@ -649,15 +675,16 @@ class Rocket(object):
         self.active_queue = Queue()
 
         self._threadpool = ThreadPool(get_method(method),
-                                      app_info = app_info,
-                                      active_queue = self.active_queue,
-                                      monitor_queue = self.monitor_queue,
-                                      min_threads = min_threads,
-                                      max_threads = max_threads)
+                                      app_info=app_info,
+                                      active_queue=self.active_queue,
+                                      monitor_queue=self.monitor_queue,
+                                      min_threads=min_threads,
+                                      max_threads=max_threads)
 
         # Build our socket listeners
-        self.listeners = [Listener(i, queue_size, self.active_queue) for i in self.interfaces]
-        for ndx in range(len(self.listeners)-1, 0, -1):
+        self.listeners = [Listener(
+            i, queue_size, self.active_queue) for i in self.interfaces]
+        for ndx in range(len(self.listeners) - 1, 0, -1):
             if not self.listeners[ndx].ready:
                 del self.listeners[ndx]
 
@@ -704,7 +731,8 @@ class Rocket(object):
             str_extract = lambda l: (l.addr, l.port, l.secure and '*' or '')
 
             msg = 'Listening on sockets: '
-            msg += ', '.join(['%s:%i%s' % str_extract(l) for l in self.listeners])
+            msg += ', '.join(
+                ['%s:%i%s' % str_extract(l) for l in self.listeners])
             log.info(msg)
 
             for l in self.listeners:
@@ -729,7 +757,7 @@ class Rocket(object):
 
         return self.stop()
 
-    def stop(self, stoplogging = False):
+    def stop(self, stoplogging=False):
         log.info('Stopping %s' % SERVER_SOFTWARE)
 
         self.startstop_lock.acquire()
@@ -772,26 +800,27 @@ class Rocket(object):
         self.stop()
         self.start()
 
+
 def CherryPyWSGIServer(bind_addr,
                        wsgi_app,
-                       numthreads = 10,
-                       server_name = None,
-                       max = -1,
-                       request_queue_size = 5,
-                       timeout = 10,
-                       shutdown_timeout = 5):
+                       numthreads=10,
+                       server_name=None,
+                       max=-1,
+                       request_queue_size=5,
+                       timeout=10,
+                       shutdown_timeout=5):
     """ A Cherrypy wsgiserver-compatible wrapper. """
     max_threads = max
     if max_threads < 0:
         max_threads = 0
     return Rocket(bind_addr, 'wsgi', {'wsgi_app': wsgi_app},
-                  min_threads = numthreads,
-                  max_threads = max_threads,
-                  queue_size = request_queue_size,
-                  timeout = timeout)
+                  min_threads=numthreads,
+                  max_threads=max_threads,
+                  queue_size=request_queue_size,
+                  timeout=timeout)
 
-# Monolithic build...end of module: rocket\main.py
-# Monolithic build...start of module: rocket\monitor.py
+# Monolithic build...end of module: rocket/main.py
+# Monolithic build...start of module: rocket/monitor.py
 
 # Import System Modules
 import time
@@ -801,6 +830,7 @@ from threading import Thread
 
 # Import Package Modules
 # package imports removed in monolithic build
+
 
 class Monitor(Thread):
     # Monitor worker class.
@@ -925,8 +955,10 @@ class Monitor(Thread):
                 for c in stale:
                     if __debug__:
                         # "EXPR and A or B" kept for Py2.4 compatibility
-                        data = (c.client_addr, c.server_port, c.ssl and '*' or '')
-                        self.log.debug('Flushing stale connection: %s:%i%s' % data)
+                        data = (
+                            c.client_addr, c.server_port, c.ssl and '*' or '')
+                        self.log.debug(
+                            'Flushing stale connection: %s:%i%s' % data)
 
                     self.connections.remove(c)
                     list_changed = True
@@ -938,7 +970,6 @@ class Monitor(Thread):
 
             # Dynamically resize the threadpool to adapt to our changing needs.
             self._threadpool.dynamic_resize()
-
 
     def stop(self):
         self.active = False
@@ -970,8 +1001,8 @@ class Monitor(Thread):
         # Place a None sentry value to cause the monitor to die.
         self.monitor_queue.put(None)
 
-# Monolithic build...end of module: rocket\monitor.py
-# Monolithic build...start of module: rocket\threadpool.py
+# Monolithic build...end of module: rocket/monitor.py
+# Monolithic build...start of module: rocket/threadpool.py
 
 # Import System Modules
 import logging
@@ -982,6 +1013,7 @@ import logging
 # Setup Logging
 log = logging.getLogger('Rocket.Errors.ThreadPool')
 log.addHandler(NullHandler())
+
 
 class ThreadPool:
     """The ThreadPool class is a container class for all the worker threads. It
@@ -1010,7 +1042,7 @@ class ThreadPool:
         self.alive = False
 
         # TODO - Optimize this based on some real-world usage data
-        self.grow_threshold = int(max_threads/10) + 2
+        self.grow_threshold = int(max_threads / 10) + 2
 
         if not isinstance(app_info, dict):
             app_info = dict()
@@ -1132,8 +1164,8 @@ class ThreadPool:
 
                 self.grow(queueSize)
 
-# Monolithic build...end of module: rocket\threadpool.py
-# Monolithic build...start of module: rocket\worker.py
+# Monolithic build...end of module: rocket/threadpool.py
+# Monolithic build...start of module: rocket/worker.py
 
 # Import System Modules
 import re
@@ -1178,21 +1210,23 @@ re_REQUEST_LINE = re.compile(r"""^
     (?P<host>[^/]+)                                          # Host
 )? #
 (?P<path>(\*|/[^ \?]*))                                      # Path
-(\? (?P<query_string>[^ ]+))?                                # Query String
+(\? (?P<query_string>[^ ]*))?                                # Query String
 \                                                            # (single space)
 (?P<protocol>HTTPS?/1\.[01])                                 # Protocol
 $
 """, re.X)
 LOG_LINE = '%(client_ip)s - "%(request_line)s" - %(status)s %(size)s'
 RESPONSE = '''\
-HTTP/1.1 %s
+%s %s
 Content-Length: %i
 Content-Type: %s
 
 %s
 '''
 if IS_JYTHON:
-    HTTP_METHODS = set(['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'TRACE', 'CONNECT'])
+    HTTP_METHODS = set(['OPTIONS', 'GET', 'HEAD', 'POST', 'PUT',
+                        'DELETE', 'TRACE', 'CONNECT'])
+
 
 class Worker(Thread):
     """The Worker class is a base class responsible for receiving connections
@@ -1216,13 +1250,14 @@ class Worker(Thread):
         self.status = "200 OK"
         self.closeConnection = True
         self.request_line = ""
+        self.protocol = 'HTTP/1.1'
 
         # Request Log
         self.req_log = logging.getLogger('Rocket.Requests')
         self.req_log.addHandler(NullHandler())
 
         # Error Log
-        self.err_log = logging.getLogger('Rocket.Errors.'+self.getName())
+        self.err_log = logging.getLogger('Rocket.Errors.' + self.getName())
         self.err_log.addHandler(NullHandler())
 
     def _handleError(self, typ, val, tb):
@@ -1300,25 +1335,19 @@ class Worker(Thread):
                     self.err_log.debug('Serving a request')
                 try:
                     self.run_app(conn)
-                    log_info = dict(client_ip = conn.client_addr,
-                                    time = datetime.now().strftime('%c'),
-                                    status = self.status.split(' ')[0],
-                                    size = self.size,
-                                    request_line = self.request_line)
-                    self.req_log.info(LOG_LINE % log_info)
                 except:
                     exc = sys.exc_info()
                     handled = self._handleError(*exc)
                     if handled:
                         break
-                    else:
-                        if self.request_line:
-                            log_info = dict(client_ip = conn.client_addr,
-                                            time = datetime.now().strftime('%c'),
-                                            status = self.status.split(' ')[0],
-                                            size = self.size,
-                                            request_line = self.request_line + ' - not stopping')
-                            self.req_log.info(LOG_LINE % log_info)
+                finally:
+                    if self.request_line:
+                        log_info = dict(client_ip=conn.client_addr,
+                                        time=datetime.now().strftime('%c'),
+                                        status=self.status.split(' ')[0],
+                                        size=self.size,
+                                        request_line=self.request_line)
+                        self.req_log.info(LOG_LINE % log_info)
 
                 if self.closeConnection:
                     try:
@@ -1336,7 +1365,8 @@ class Worker(Thread):
 
     def send_response(self, status):
         stat_msg = status.split(' ', 1)[1]
-        msg = RESPONSE % (status,
+        msg = RESPONSE % (self.protocol,
+                          status,
                           len(stat_msg),
                           'text/plain',
                           stat_msg)
@@ -1344,23 +1374,12 @@ class Worker(Thread):
             self.conn.sendall(b(msg))
         except socket.timeout:
             self.closeConnection = True
-            self.err_log.error(
-                'Tried to send "%s" to client but received timeout error'
-                % status)
+            msg = 'Tried to send "%s" to client but received timeout error'
+            self.err_log.error(msg % status)
         except socket.error:
             self.closeConnection = True
-            self.err_log.error(
-                'Tried to send "%s" to client but received socket error'
-                % status)
-
-    #def kill(self):
-    #    if self.isAlive() and hasattr(self, 'conn'):
-    #        try:
-    #            self.conn.shutdown(socket.SHUT_RDWR)
-    #        except socket.error:
-    #            info = sys.exc_info()
-    #            if info[1].args[0] != socket.EBADF:
-    #                self.err_log.debug('Error on shutdown: '+str(info))
+            msg = 'Tried to send "%s" to client but received socket error'
+            self.err_log.error(msg % status)
 
     def read_request_line(self, sock_file):
         self.request_line = ''
@@ -1379,15 +1398,18 @@ class Worker(Thread):
                 if PY3K:
                     d = d.decode('ISO-8859-1')
         except socket.timeout:
-            raise SocketTimeout("Socket timed out before request.")
+            raise SocketTimeout('Socket timed out before request.')
         except TypeError:
-            raise SocketClosed("ssl bug caused closer of socket, upgrade to python 2.7")
+            raise SocketClosed(
+                'SSL bug caused closure of socket.  See '
+                '"https://groups.google.com/d/topic/web2py/P_Gw0JxWzCs".')
 
         d = d.strip()
 
         if not d:
             if __debug__:
-                self.err_log.debug('Client did not send a recognizable request.')
+                self.err_log.debug(
+                    'Client did not send a recognizable request.')
             raise SocketClosed('Client closed socket.')
 
         self.request_line = d
@@ -1407,12 +1429,14 @@ class Worker(Thread):
             raise BadRequest
 
         req = match.groupdict()
-        for k,v in req.iteritems():
+        for k, v in req.iteritems():
             if not v:
                 req[k] = ""
             if k == 'path':
-                req['path'] = r'%2F'.join([unquote(x) for x in re_SLASH.split(v)])
+                req['path'] = r'%2F'.join(
+                    [unquote(x) for x in re_SLASH.split(v)])
 
+        self.protocol = req['protocol']
         return req
 
     def _read_request_line_jython(self, d):
@@ -1420,15 +1444,15 @@ class Worker(Thread):
         try:
             method, uri, proto = d.split(' ')
             if not proto.startswith('HTTP') or \
-               proto[-3:] not in ('1.0', '1.1') or \
-               method not in HTTP_METHODS:
+                    proto[-3:] not in ('1.0', '1.1') or \
+                    method not in HTTP_METHODS:
                 self.send_response('400 Bad Request')
                 raise BadRequest
         except ValueError:
             self.send_response('400 Bad Request')
             raise BadRequest
 
-        req = dict(method=method, protocol = proto)
+        req = dict(method=method, protocol=proto)
         scheme = ''
         host = ''
         if uri == '*' or uri.startswith('/'):
@@ -1453,27 +1477,27 @@ class Worker(Thread):
                    host=host)
         return req
 
-
     def read_headers(self, sock_file):
         try:
             headers = dict()
-            l = sock_file.readline()
-
             lname = None
             lval = None
             while True:
+                l = sock_file.readline()
+
                 if PY3K:
                     try:
                         l = str(l, 'ISO-8859-1')
                     except UnicodeDecodeError:
-                        self.err_log.warning('Client sent invalid header: ' + repr(l))
+                        self.err_log.warning(
+                            'Client sent invalid header: ' + repr(l))
 
-                if l == '\r\n':
+                if l.strip().replace('\0', '') == '':
                     break
 
                 if l[0] in ' \t' and lname:
                     # Some headers take more than one line
-                    lval += ',' + l.strip()
+                    lval += ' ' + l.strip()
                 else:
                     # HTTP header values are latin-1 encoded
                     l = l.split(':', 1)
@@ -1481,27 +1505,32 @@ class Worker(Thread):
 
                     lname = l[0].strip().upper().replace('-', '_')
                     lval = l[-1].strip()
+
                 headers[str(lname)] = str(lval)
 
-                l = sock_file.readline()
         except socket.timeout:
             raise SocketTimeout("Socket timed out before request.")
 
         return headers
 
+
 class SocketTimeout(Exception):
     "Exception for when a socket times out between requests."
     pass
+
 
 class BadRequest(Exception):
     "Exception for when a client sends an incomprehensible request."
     pass
 
+
 class SocketClosed(Exception):
     "Exception for when a socket is closed by the client."
     pass
 
+
 class ChunkedReader(object):
+
     def __init__(self, sock_file):
         self.stream = sock_file
         self.chunk_size = 0
@@ -1548,211 +1577,16 @@ class ChunkedReader(object):
     def readlines(self):
         yield self.readline()
 
+
 def get_method(method):
-
-
-    methods = dict(wsgi=WSGIWorker,
-                   fs=FileSystemWorker)
+    methods = dict(wsgi=WSGIWorker)
     return methods[method.lower()]
 
-# Monolithic build...end of module: rocket\worker.py
-# Monolithic build...start of module: rocket\methods\__init__.py
+# Monolithic build...end of module: rocket/worker.py
+# Monolithic build...start of module: rocket/methods/__init__.py
 
-# Monolithic build...end of module: rocket\methods\__init__.py
-# Monolithic build...start of module: rocket\methods\fs.py
-
-# Import System Modules
-import os
-import time
-import mimetypes
-from email.utils import formatdate
-from wsgiref.headers import Headers
-from wsgiref.util import FileWrapper
-# Import Package Modules
-# package imports removed in monolithic build
-
-
-# Define Constants
-CHUNK_SIZE = 2**16 # 64 Kilobyte chunks
-HEADER_RESPONSE = '''HTTP/1.1 %s\r\n%s'''
-INDEX_HEADER = '''\
-<html>
-<head><title>Directory Index: %(path)s</title>
-<style> .parent { margin-bottom: 1em; }</style>
-</head>
-<body><h1>Directory Index: %(path)s</h1>
-<table>
-<tr><th>Directories</th></tr>
-'''
-INDEX_ROW = '''<tr><td><div class="%(cls)s"><a href="/%(link)s">%(name)s</a></div></td></tr>'''
-INDEX_FOOTER = '''</table></body></html>\r\n'''
-
-class LimitingFileWrapper(FileWrapper):
-    def __init__(self, limit=None, *args, **kwargs):
-        self.limit = limit
-        FileWrapper.__init__(self, *args, **kwargs)
-
-    def read(self, amt):
-        if amt > self.limit:
-            amt = self.limit
-        self.limit -= amt
-        return FileWrapper.read(self, amt)
-
-class FileSystemWorker(Worker):
-    def __init__(self, *args, **kwargs):
-        """Builds some instance variables that will last the life of the
-        thread."""
-
-        Worker.__init__(self, *args, **kwargs)
-
-        self.root = os.path.abspath(self.app_info['document_root'])
-        self.display_index = self.app_info['display_index']
-
-    def serve_file(self, filepath, headers):
-        filestat = os.stat(filepath)
-        self.size = filestat.st_size
-        modtime = time.strftime("%a, %d %b %Y %H:%M:%S GMT",
-                                time.gmtime(filestat.st_mtime))
-        self.headers.add_header('Last-Modified', modtime)
-        if headers.get('if_modified_since') == modtime:
-            # The browser cache is up-to-date, send a 304.
-            self.status = "304 Not Modified"
-            self.data = []
-            return
-
-        ct = mimetypes.guess_type(filepath)[0]
-        self.content_type = ct if ct else 'text/plain'
-        try:
-            f = open(filepath, 'rb')
-            self.headers['Pragma'] = 'cache'
-            self.headers['Cache-Control'] = 'private'
-            self.headers['Content-Length'] = str(self.size)
-            if self.etag:
-                self.headers.add_header('Etag', self.etag)
-            if self.expires:
-                self.headers.add_header('Expires', self.expires)
-
-            try:
-                # Implement 206 partial file support.
-                start, end = headers['range'].split('-')
-                start = 0 if not start.isdigit() else int(start)
-                end = self.size if not end.isdigit() else int(end)
-                if self.size < end or start < 0:
-                    self.status = "214 Unsatisfiable Range Requested"
-                    self.data = FileWrapper(f, CHUNK_SIZE)
-                else:
-                    f.seek(start)
-                    self.data = LimitingFileWrapper(f, CHUNK_SIZE, limit=end)
-                    self.status = "206 Partial Content"
-            except:
-                self.data = FileWrapper(f, CHUNK_SIZE)
-        except IOError:
-            self.status = "403 Forbidden"
-
-    def serve_dir(self, pth, rpth):
-        def rel_path(path):
-            return os.path.normpath(path[len(self.root):] if path.startswith(self.root) else path)
-
-        if not self.display_index:
-            self.status = '404 File Not Found'
-            return b('')
-        else:
-            self.content_type = 'text/html'
-
-            dir_contents = [os.path.join(pth, x) for x in os.listdir(os.path.normpath(pth))]
-            dir_contents.sort()
-
-            dirs = [rel_path(x)+'/' for x in dir_contents if os.path.isdir(x)]
-            files = [rel_path(x) for x in dir_contents if os.path.isfile(x)]
-
-            self.data = [INDEX_HEADER % dict(path='/'+rpth)]
-            if rpth:
-                self.data += [INDEX_ROW % dict(name='(parent directory)', cls='dir parent', link='/'.join(rpth[:-1].split('/')[:-1]))]
-            self.data += [INDEX_ROW % dict(name=os.path.basename(x[:-1]), link=os.path.join(rpth, os.path.basename(x[:-1])).replace('\\', '/'), cls='dir') for x in dirs]
-            self.data += ['<tr><th>Files</th></tr>']
-            self.data += [INDEX_ROW % dict(name=os.path.basename(x), link=os.path.join(rpth, os.path.basename(x)).replace('\\', '/'), cls='file') for x in files]
-            self.data += [INDEX_FOOTER]
-            self.headers['Content-Length'] = self.size = str(sum([len(x) for x in self.data]))
-            self.status = '200 OK'
-
-    def run_app(self, conn):
-        self.status = "200 OK"
-        self.size = 0
-        self.expires = None
-        self.etag = None
-        self.content_type = 'text/plain'
-        self.content_length = None
-
-        if __debug__:
-            self.err_log.debug('Getting sock_file')
-
-        # Build our file-like object
-        sock_file = conn.makefile('rb',BUF_SIZE)
-        request = self.read_request_line(sock_file)
-        if request['method'].upper() not in ('GET', ):
-            self.status = "501 Not Implemented"
-
-        try:
-            # Get our file path
-            reader = self.read_headers(sock_file)
-            headers = dict((k.lower(),v) for k,v in reader.iteritems())
-            rpath = request.get('path', '').lstrip('/')
-            filepath = os.path.join(self.root, rpath)
-            filepath = os.path.abspath(filepath)
-            if __debug__:
-                self.err_log.debug('Request for path: %s' % filepath)
-
-            self.closeConnection = headers.get('connection', 'close').lower() == 'close'
-            self.headers = Headers([('Date', formatdate(usegmt=True)),
-                                    ('Server', HTTP_SERVER_SOFTWARE),
-                                    ('Connection', headers.get('connection', 'close')),
-                                   ])
-
-            if not filepath.lower().startswith(self.root.lower()):
-                # File must be within our root directory
-                self.status = "400 Bad Request"
-                self.closeConnection = True
-            elif not os.path.exists(filepath):
-                self.status = "404 File Not Found"
-                self.closeConnection = True
-            elif os.path.isdir(filepath):
-                self.serve_dir(filepath, rpath)
-            elif os.path.isfile(filepath):
-                self.serve_file(filepath, headers)
-            else:
-                # It exists but it's not a file or a directory????
-                # What is it then?
-                self.status = "501 Not Implemented"
-                self.closeConnection = True
-
-            h = self.headers
-            statcode, statstr = self.status.split(' ', 1)
-            statcode = int(statcode)
-            if statcode >= 400:
-                h.add_header('Content-Type', self.content_type)
-                self.data = [statstr]
-
-            # Build our output headers
-            header_data = HEADER_RESPONSE % (self.status, str(h))
-
-            # Send the headers
-            if __debug__:
-                self.err_log.debug('Sending Headers: %s' % repr(header_data))
-            self.conn.sendall(b(header_data))
-
-            for data in self.data:
-                self.conn.sendall(b(data))
-
-            if hasattr(self.data, 'close'):
-                self.data.close()
-
-        finally:
-            if __debug__:
-                self.err_log.debug('Finally closing sock_file')
-            sock_file.close()
-
-# Monolithic build...end of module: rocket\methods\fs.py
-# Monolithic build...start of module: rocket\methods\wsgi.py
+# Monolithic build...end of module: rocket/methods/__init__.py
+# Monolithic build...start of module: rocket/methods/wsgi.py
 
 # Import System Modules
 import sys
@@ -1762,8 +1596,6 @@ from wsgiref.util import FileWrapper
 
 # Import Package Modules
 # package imports removed in monolithic build
-
-
 
 if PY3K:
     from email.utils import formatdate
@@ -1783,6 +1615,7 @@ BASE_ENV = {'SERVER_NAME': SERVER_NAME,
             'wsgi.file_wrapper': FileWrapper
             }
 
+
 class WSGIWorker(Worker):
     def __init__(self, *args, **kwargs):
         """Builds some instance variables that will last the life of the
@@ -1793,9 +1626,10 @@ class WSGIWorker(Worker):
             multithreaded = self.app_info.get('max_threads') != 1
         else:
             multithreaded = False
-        self.base_environ = dict({'SERVER_SOFTWARE': self.app_info['server_software'],
-                                  'wsgi.multithread': multithreaded,
-                                  })
+        self.base_environ = dict(
+            {'SERVER_SOFTWARE': self.app_info['server_software'],
+             'wsgi.multithread': multithreaded,
+             })
         self.base_environ.update(BASE_ENV)
 
         # Grab our application
@@ -1819,8 +1653,8 @@ class WSGIWorker(Worker):
         environ = self.base_environ.copy()
 
         # Grab the headers
-        for k, v in self.read_headers(sock_file).items():
-            environ[str('HTTP_'+k)] = v
+        for k, v in self.read_headers(sock_file).iteritems():
+            environ[str('HTTP_' + k)] = v
 
         # Add CGI Variables
         environ['REQUEST_METHOD'] = request['method']
@@ -1842,16 +1676,14 @@ class WSGIWorker(Worker):
         if conn.ssl:
             environ['wsgi.url_scheme'] = 'https'
             environ['HTTPS'] = 'on'
-        else:
-            environ['wsgi.url_scheme'] = 'http'
-
-        if conn.ssl:
             try:
                 peercert = conn.socket.getpeercert(binary_form=True)
                 environ['SSL_CLIENT_RAW_CERT'] = \
                     peercert and ssl.DER_cert_to_PEM_cert(peercert)
-            except Exception,e:
-                print e
+            except Exception:
+                print sys.exc_info()[1]
+        else:
+            environ['wsgi.url_scheme'] = 'http'
 
         if environ.get('HTTP_TRANSFER_ENCODING', '') == 'chunked':
             environ['wsgi.input'] = ChunkedReader(sock_file)
@@ -1864,36 +1696,36 @@ class WSGIWorker(Worker):
         h_set = self.header_set
 
         # Does the app want us to send output chunked?
-        self.chunked = h_set.get('transfer-encoding', '').lower() == 'chunked'
+        self.chunked = h_set.get('Transfer-Encoding', '').lower() == 'chunked'
 
         # Add a Date header if it's not there already
-        if not 'date' in h_set:
+        if not 'Date' in h_set:
             h_set['Date'] = formatdate(usegmt=True)
 
         # Add a Server header if it's not there already
-        if not 'server' in h_set:
+        if not 'Server' in h_set:
             h_set['Server'] = HTTP_SERVER_SOFTWARE
 
-        if 'content-length' in h_set:
-            self.size = int(h_set['content-length'])
+        if 'Content-Length' in h_set:
+            self.size = int(h_set['Content-Length'])
         else:
             s = int(self.status.split(' ')[0])
-            if s < 200 or s not in (204, 205, 304):
-                if not self.chunked:
-                    if sections == 1:
-                        # Add a Content-Length header if it's not there already
-                        h_set['Content-Length'] = str(len(data))
-                        self.size = len(data)
-                    else:
-                        # If they sent us more than one section, we blow chunks
-                        h_set['Transfer-Encoding'] = 'Chunked'
-                        self.chunked = True
-                        if __debug__:
-                            self.err_log.debug('Adding header...'
-                                               'Transfer-Encoding: Chunked')
+            if (s < 200 or s not in (204, 205, 304)) and not self.chunked:
+                if sections == 1 or self.protocol != 'HTTP/1.1':
+                    # Add a Content-Length header because it's not there
+                    self.size = len(data)
+                    h_set['Content-Length'] = str(self.size)
+                else:
+                    # If they sent us more than one section, we blow chunks
+                    h_set['Transfer-Encoding'] = 'Chunked'
+                    self.chunked = True
+                    if __debug__:
+                        self.err_log.debug('Adding header...'
+                                           'Transfer-Encoding: Chunked')
 
-        if 'connection' not in h_set:
-            # If the application did not provide a connection header, fill it in
+        if 'Connection' not in h_set:
+            # If the application did not provide a connection header,
+            # fill it in
             client_conn = self.environ.get('HTTP_CONNECTION', '').lower()
             if self.environ['SERVER_PROTOCOL'] == 'HTTP/1.1':
                 # HTTP = 1.1 defaults to keep-alive connections
@@ -1902,11 +1734,12 @@ class WSGIWorker(Worker):
                 else:
                     h_set['Connection'] = 'keep-alive'
             else:
-                # HTTP < 1.1 supports keep-alive but it's quirky so we don't support it
+                # HTTP < 1.1 supports keep-alive but it's quirky
+                # so we don't support it
                 h_set['Connection'] = 'close'
 
         # Close our connection if we need to.
-        self.closeConnection = h_set.get('connection', '').lower() == 'close'
+        self.closeConnection = h_set.get('Connection', '').lower() == 'close'
 
         # Build our output headers
         header_data = HEADER_RESPONSE % (self.status, str(h_set))
@@ -1938,6 +1771,8 @@ class WSGIWorker(Worker):
                     self.conn.sendall(b('%x\r\n%s\r\n' % (len(data), data)))
                 else:
                     self.conn.sendall(data)
+            except socket.timeout:
+                self.closeConnection = True
             except socket.error:
                 # But some clients will close the connection before that
                 # resulting in a socket error.
@@ -2028,62 +1863,9 @@ class WSGIWorker(Worker):
             if __debug__:
                 self.err_log.debug('Finally closing output and sock_file')
 
-            if hasattr(output,'close'):
+            if hasattr(output, 'close'):
                 output.close()
 
             sock_file.close()
 
-# Monolithic build...end of module: rocket\methods\wsgi.py
-
-#
-# the following code is not part of Rocket but was added in web2py for testing purposes
-#
-
-def demo_app(environ, start_response):
-    global static_folder
-    import os
-    types = {'htm': 'text/html','html': 'text/html','gif': 'image/gif',
-             'jpg': 'image/jpeg','png': 'image/png','pdf': 'applications/pdf'}
-    if static_folder:
-        if not static_folder.startswith('/'):
-            static_folder = os.path.join(os.getcwd(),static_folder)
-        path = os.path.join(static_folder, environ['PATH_INFO'][1:] or 'index.html')
-        type = types.get(path.split('.')[-1],'text')
-        if os.path.exists(path):
-            try:
-                data = open(path,'rb').read()
-                start_response('200 OK', [('Content-Type', type)])
-            except IOError:
-                start_response('404 NOT FOUND', [])
-                data = '404 NOT FOUND'
-        else:
-            start_response('500 INTERNAL SERVER ERROR', [])
-            data = '500 INTERNAL SERVER ERROR'
-    else:
-        start_response('200 OK', [('Content-Type', 'text/html')])
-        data = '<html><body><h1>Hello from Rocket Web Server</h1></body></html>'
-    return [data]
-
-def demo():
-    from optparse import OptionParser
-    parser = OptionParser()
-    parser.add_option("-i", "--ip", dest="ip",default="127.0.0.1",
-                      help="ip address of the network interface")
-    parser.add_option("-p", "--port", dest="port",default="8000",
-                      help="post where to run web server")
-    parser.add_option("-s", "--static", dest="static",default=None,
-                      help="folder containing static files")
-    (options, args) = parser.parse_args()
-    global static_folder
-    static_folder = options.static
-    print 'Rocket running on %s:%s' % (options.ip, options.port)
-    r=Rocket((options.ip,int(options.port)),'wsgi', {'wsgi_app':demo_app})
-    r.start()
-
-if __name__=='__main__':
-    demo()
-
-
-
-
-
+# Monolithic build...end of module: rocket/methods/wsgi.py

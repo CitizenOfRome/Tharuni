@@ -22,6 +22,7 @@
 #########################################################################
 from gluon import current
 
+
 class RESIZE(object):
     def __init__(self, nx=160, ny=80, error_message=' image resize'):
         (self.nx, self.ny, self.error_message) = (nx, ny, error_message)
@@ -43,13 +44,14 @@ class RESIZE(object):
         else:
             return (value, None)
 
+
 def THUMB(image, nx=120, ny=120, gae=False, name='thumb'):
     if image:
         if not gae:
             request = current.request
             from PIL import Image
             import os
-            img = Image.open(request.folder + 'uploads/' + image)
+            img = Image.open(os.path.join(request.folder,'uploads',image))
             img.thumbnail((nx, ny), Image.ANTIALIAS)
             root, ext = os.path.splitext(image)
             thumb = '%s_%s%s' % (root, name, ext)
@@ -57,5 +59,3 @@ def THUMB(image, nx=120, ny=120, gae=False, name='thumb'):
             return thumb
         else:
             return image
-
-

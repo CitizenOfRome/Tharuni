@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #
 # Copyright 2007 Google Inc.
 #
@@ -49,19 +48,19 @@ _DEBUG = True
 _HISTORY_KIND = '_Shell_History'
 
 # Types that can't be pickled.
-UNPICKLABLE_TYPES = (
+UNPICKLABLE_TYPES = [
     types.ModuleType,
     types.TypeType,
     types.ClassType,
     types.FunctionType,
-    )
+]
 
 # Unpicklable statements to seed new historys with.
 INITIAL_UNPICKLABLES = [
     'import logging',
     'import os',
     'import sys',
-    ]
+]
 
 
 class History:
@@ -154,6 +153,7 @@ class History:
         if name in self.unpicklable_names:
             self.unpicklable_names.remove(name)
 
+
 def represent(obj):
     """Returns a string representing the given object's value, which should allow the
     code below to determine whether the object changes over time.
@@ -162,6 +162,7 @@ def represent(obj):
         return cPickle.dumps(obj)
     except:
         return repr(obj)
+
 
 def run(history, statement, env={}):
     """
@@ -179,7 +180,6 @@ def run(history, statement, env={}):
     # add a couple newlines at the end of the statement. this makes
     # single-line expressions such as 'class Foo: pass' evaluate happily.
     statement += '\n\n'
-
 
     # log and compile the statement up front
     try:
@@ -224,7 +224,8 @@ def run(history, statement, env={}):
                 history.remove_global(name)
 
         # run!
-        old_globals = dict((key,represent(value)) for key,value in statement_module.__dict__.items())
+        old_globals = dict((key, represent(
+            value)) for key, value in statement_module.__dict__.items())
         try:
             old_stdout, old_stderr = sys.stdout, sys.stderr
             try:
@@ -244,7 +245,7 @@ def run(history, statement, env={}):
             if name not in old_globals or represent(val) != old_globals[name]:
                 new_globals[name] = val
 
-        if True in [isinstance(val, UNPICKLABLE_TYPES)
+        if True in [isinstance(val, tuple(UNPICKLABLE_TYPES))
                     for val in new_globals.values()]:
             # this statement added an unpicklable global. store the statement and
             # the names of all of the globals it added in the unpicklables.
@@ -255,19 +256,17 @@ def run(history, statement, env={}):
             # new globals back into the datastore.
             for name, val in new_globals.items():
                 if not name.startswith('__'):
-                    history.set_global(name, val)
+                    try:
+                        history.set_global(name, val)
+                    except (TypeError, cPickle.PicklingError), ex:
+                        UNPICKLABLE_TYPES.append(type(val))
+                        history.add_unpicklable(statement, new_globals.keys())
 
     finally:
         sys.modules['__main__'] = old_main
     return output.getvalue()
 
-if __name__=='__main__':
-    history=History()
-    while True: print run(history, raw_input('>>> ')).rstrip()
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    history = History()
+    while True:
+        print run(history, raw_input('>>> ')).rstrip()

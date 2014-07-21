@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by the
@@ -46,8 +45,10 @@ class JSONDummyParser:
     "json wrapper for xmlrpclib parser interfase"
     def __init__(self):
         self.buf = StringIO()
+
     def feed(self, data):
         self.buf.write(data)
+
     def close(self):
         return self.buf.getvalue()
 
@@ -72,6 +73,7 @@ class JSONTransportMixin:
 class JSONTransport(JSONTransportMixin, Transport):
     pass
 
+
 class JSONSafeTransport(JSONTransportMixin, SafeTransport):
     pass
 
@@ -79,16 +81,17 @@ class JSONSafeTransport(JSONTransportMixin, SafeTransport):
 class ServerProxy(object):
     "JSON RPC Simple Client Service Proxy"
 
-    def __init__(self,  uri, transport=None, encoding=None, verbose=0):
+    def __init__(self, uri, transport=None, encoding=None, verbose=0,version=None):
         self.location = uri             # server location (url)
         self.trace = verbose            # show debug messages
         self.exceptions = True          # raise errors? (JSONRPCError)
         self.timeout = None
         self.json_request = self.json_response = ''
+        self.version = version          # '2.0' for jsonrpc2
 
         type, uri = urllib.splittype(uri)
         if type not in ("http", "https"):
-            raise IOError, "unsupported JSON-RPC protocol"
+            raise IOError("unsupported JSON-RPC protocol")
         self.__host, self.__handler = urllib.splithost(uri)
 
         if transport is None:
@@ -110,6 +113,8 @@ class ServerProxy(object):
         # build data sent to the service
         request_id = random.randint(0, sys.maxint)
         data = {'id': request_id, 'method': method, 'params': args, }
+        if self.version:
+            data['jsonrpc'] = self.version #mandatory key/value for jsonrpc2 validation else err -32600
         request = json.dumps(data)
 
         # make HTTP request (retry if connection is lost)
@@ -118,7 +123,7 @@ class ServerProxy(object):
             self.__handler,
             request,
             verbose=self.__verbose
-            )
+        )
 
         # store plain request and response for further debugging
         self.json_request = request
@@ -128,14 +133,13 @@ class ServerProxy(object):
         # {'version': '1.1', 'id': id, 'result': result, 'error': None}
         response = json.loads(response)
 
-        if response['id'] != request_id:
-            raise JSONRPCError(0, "JSON Request ID != Response ID")
-
         self.error = response.get('error', {})
         if self.error and self.exceptions:
             raise JSONRPCError(self.error.get('code', 0),
                                self.error.get('message', ''),
                                self.error.get('data', None))
+        if response['id'] != request_id:
+            raise JSONRPCError(0, "JSON Request ID != Response ID")
 
         return response.get('result')
 
@@ -148,7 +152,3 @@ if __name__ == "__main__":
     location = "http://www.web2py.com.ar/webservices/sample/call/jsonrpc"
     client = ServerProxy(location, verbose='--verbose' in sys.argv,)
     print client.add(1, 2)
-
-
-
-

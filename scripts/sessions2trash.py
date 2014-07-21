@@ -20,9 +20,16 @@ Typical usage:
 
     # Delete all sessions regardless of expiry and exit.
     python web2py.py -S app -M -R scripts/sessions2trash.py -A -o -x 0
+    
+    # Delete session in a module (move to the modules folder)
+    from sessions2trash import single_loop
+    def delete_sessions():
+        single_loop()
+    
 """
 
 from __future__ import with_statement
+from gluon import current
 from gluon.storage import Storage
 from optparse import OptionParser
 import cPickle
@@ -93,11 +100,9 @@ class SessionSetDb(SessionSet):
     def get(self):
         """Return list of SessionDb instances for existing sessions."""
         sessions = []
-        tablename = 'web2py_session'
-        if request.application:
-            tablename = 'web2py_session_' + request.application
-        if tablename in db:
-            for row in db(db[tablename].id > 0).select():
+        table = current.response.session_db_table
+        if table:
+            for row in table._db(table.id > 0).select():
                 sessions.append(SessionDb(row))
         return sessions
 
@@ -110,8 +115,8 @@ class SessionSetFiles(SessionSet):
 
     def get(self):
         """Return list of SessionFile instances for existing sessions."""
-        path = os.path.join(request.folder, 'sessions')
-        return [SessionFile(os.path.join(path, x)) for x in os.listdir(path)]
+        root_path = os.path.join(current.request.folder, 'sessions')
+        return [SessionFile(os.path.join(path, x)) for path,dirs,files in os.walk(root_path) for x in files]
 
 
 class SessionDb(object):
@@ -121,8 +126,9 @@ class SessionDb(object):
         self.row = row
 
     def delete(self):
+        table = current.response.session_db_table
         self.row.delete_record()
-        db.commit()
+        table._db.commit()
 
     def get(self):
         session = Storage()
@@ -130,7 +136,13 @@ class SessionDb(object):
         return session
 
     def last_visit_default(self):
-        return self.row.modified_datetime
+        if isinstance(self.row.modified_datetime, datetime.datetime):
+            return self.row.modified_datetime
+        else:
+            try:
+                return datetime.datetime.strptime(self.row.modified_datetime, '%Y-%m-%d %H:%M:%S.%f')
+            except:
+                print 'failed to retrieve last modified time (value: %s)' % self.row.modified_datetime
 
     def __str__(self):
         return self.row.unique_key
@@ -143,7 +155,10 @@ class SessionFile(object):
         self.filename = filename
 
     def delete(self):
-        os.unlink(self.filename)
+        try:
+            os.unlink(self.filename)
+        except:
+            pass
 
     def get(self):
         session = Storage()
@@ -153,7 +168,7 @@ class SessionFile(object):
 
     def last_visit_default(self):
         return datetime.datetime.fromtimestamp(
-                os.stat(self.filename)[stat.ST_MTIME])
+            os.stat(self.filename)[stat.ST_MTIME])
 
     def __str__(self):
         return self.filename
@@ -166,9 +181,20 @@ def total_seconds(delta):
     Args:
         delta: datetime.timedelta instance.
     """
-    return (delta.microseconds + (delta.seconds + (delta.days * 24 * 3600)) * \
+    return (delta.microseconds + (delta.seconds + (delta.days * 24 * 3600)) *
             10 ** 6) / 10 ** 6
 
+def single_loop(expiration=None, force=False, verbose=False):
+    if expiration is None:
+        try:
+            expiration = auth.settings.expiration
+        except:
+            expiration = EXPIRATION_MINUTES * 60
+
+    set_db = SessionSetDb(expiration, force, verbose)
+    set_files = SessionSetFiles(expiration, force, verbose)
+    set_db.trash()
+    set_files.trash()
 
 def main():
     """Main processing."""
@@ -177,40 +203,32 @@ def main():
     parser = OptionParser(usage=usage)
 
     parser.add_option('-f', '--force',
-        action='store_true', dest='force', default=False,
-        help=('Ignore session expiration. '
-            'Force expiry based on -x option or auth.settings.expiration.')
-        )
+                      action='store_true', dest='force', default=False,
+                      help=('Ignore session expiration. '
+                            'Force expiry based on -x option or auth.settings.expiration.')
+                      )
     parser.add_option('-o', '--once',
-        action='store_true', dest='once', default=False,
-        help='Delete sessions, then exit.',
-        )
+                      action='store_true', dest='once', default=False,
+                      help='Delete sessions, then exit.',
+                      )
     parser.add_option('-s', '--sleep',
-        dest='sleep', default=SLEEP_MINUTES * 60, type="int",
-        help='Number of seconds to sleep between executions. Default 300.',
-        )
+                      dest='sleep', default=SLEEP_MINUTES * 60, type="int",
+                      help='Number of seconds to sleep between executions. Default 300.',
+                      )
     parser.add_option('-v', '--verbose',
-        default=0, action='count',
-        help="print verbose output, a second -v increases verbosity")
+                      default=0, action='count',
+                      help="print verbose output, a second -v increases verbosity")
     parser.add_option('-x', '--expiration',
-        dest='expiration', default=None, type="int",
-        help='Expiration value for sessions without expiration (in seconds)',
-        )
+                      dest='expiration', default=None, type="int",
+                      help='Expiration value for sessions without expiration (in seconds)',
+                      )
 
     (options, unused_args) = parser.parse_args()
 
     expiration = options.expiration
-    if expiration is None:
-        try:
-            expiration = auth.settings.expiration
-        except:
-            expiration = EXPIRATION_MINUTES * 60
 
-    set_db = SessionSetDb(expiration, options.force, options.verbose)
-    set_files = SessionSetFiles(expiration, options.force, options.verbose)
     while True:
-        set_db.trash()
-        set_files.trash()
+        single_loop(expiration, options.force, options.verbose)
 
         if options.once:
             break
@@ -219,5 +237,5 @@ def main():
                 print 'Sleeping %s seconds' % (options.sleep)
             time.sleep(options.sleep)
 
-
-main()
+if __name__ == '__main__':
+    main()

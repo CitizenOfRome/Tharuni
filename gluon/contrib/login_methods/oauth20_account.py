@@ -7,7 +7,8 @@ License: LGPL v3
 
 Adds support for  OAuth 2.0 authentication to web2py.
 
-OAuth 2.0 Draft:  http://tools.ietf.org/html/draft-ietf-oauth-v2-10
+OAuth 2.0 spec: http://tools.ietf.org/html/rfc6749
+
 """
 
 import time
@@ -16,6 +17,8 @@ import urllib2
 
 from urllib import urlencode
 from gluon import current, redirect, HTTP
+
+import json
 
 class OAuthAccount(object):
     """
@@ -84,7 +87,8 @@ class OAuthAccount(object):
                                username = user['id'])
 
 
-               auth.settings.actions_disabled=['register','change_password','request_reset_password','profile']
+               auth.settings.actions_disabled=['register',
+                   'change_password','request_reset_password','profile']
                auth.settings.login_form=FaceBookAccount()
 
 Any optional arg in the constructor will be passed asis to remote
@@ -99,15 +103,17 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         """
 
         r = current.request
-        http_host=r.env.http_x_forwarded_for
-        if not http_host: http_host=r.env.http_host
+        http_host = r.env.http_host
 
-        url_scheme = r.env.wsgi_url_scheme
+        if r.env.https == 'on':
+            url_scheme = 'https'
+        else:
+            url_scheme = r.env.wsgi_url_scheme
         if next:
             path_info = next
         else:
             path_info = r.env.path_info
-        uri = '%s://%s%s' %(url_scheme, http_host, path_info)
+        uri = '%s://%s%s' % (url_scheme, http_host, path_info)
         if r.get_vars and not next:
             uri += '?' + urlencode(r.get_vars)
         return uri
@@ -119,15 +125,14 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         """
         # Create an OpenerDirector with support
         # for Basic HTTP Authentication...
-
-        auth_handler = urllib2.HTTPBasicAuthHandler()
-        auth_handler.add_password(None,
-                                  uri,
-                                  self.client_id,
-                                  self.client_secret)
-        opener = urllib2.build_opener(auth_handler)
+        password_mgr = urllib2.HTTPPasswordMgrWithDefaultRealm()
+        password_mgr.add_password(realm=None,
+                                  uri=uri,
+                                  user=self.client_id,
+                                  passwd=self.client_secret)
+        handler = urllib2.HTTPBasicAuthHandler(password_mgr)
+        opener = urllib2.build_opener(handler)
         return opener
-
 
     def accessToken(self):
         """
@@ -137,41 +142,55 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         Otherwise the token is fetched from the auth server.
 
         """
-        if current.session.token and current.session.token.has_key('expires'):
+        if current.session.token and 'expires' in current.session.token:
             expires = current.session.token['expires']
             # reuse token until expiration
             if expires == 0 or expires > time.time():
                         return current.session.token['access_token']
-        if current.session.code:
+
+        code = current.request.vars.code
+
+        if code:
             data = dict(client_id=self.client_id,
                         client_secret=self.client_secret,
                         redirect_uri=current.session.redirect_uri,
-                        response_type='token', code=current.session.code)
+                        code=code,
+                        grant_type='authorization_code'
+                        )
 
-            if self.args:
-                data.update(self.args)
             open_url = None
             opener = self.__build_url_opener(self.token_url)
             try:
-                open_url = opener.open(self.token_url, urlencode(data))
+                open_url = opener.open(self.token_url, urlencode(data), self.socket_timeout)
             except urllib2.HTTPError, e:
                 tmp = e.read()
-                print tmp
                 raise Exception(tmp)
             finally:
-                del current.session.code # throw it away
+                if current.session.code:
+                    del current.session.code  # throw it away
 
             if open_url:
                 try:
                     data = open_url.read()
-                    tokendata = cgi.parse_qs(data)
-                    current.session.token = \
-                        dict([(k,v[-1]) for k,v in tokendata.items()])
+                    resp_type = open_url.info().gettype()
+                    # try json style first
+                    if not resp_type or resp_type[:16] == 'application/json':
+                        try:
+                            tokendata = json.loads(data)
+                            current.session.token = tokendata
+                        except Exception, e:
+                            raise Exception("Cannot parse oauth server response %s %s" % (data, e))
+                    else: # try facebook style first with x-www-form-encoded
+                        tokendata = cgi.parse_qs(data)
+                        current.session.token = \
+                          dict([(k, v[-1]) for k, v in tokendata.items()])
+                    if not tokendata: # parsing failed?
+                        raise Exception("Cannot parse oauth server response %s" % data)
                     # set expiration absolute time try to avoid broken
                     # implementations where "expires_in" becomes "expires"
-                    if current.session.token.has_key('expires_in'):
+                    if 'expires_in' in current.session.token:
                         exps = 'expires_in'
-                    elif current.session.token.has_key('expires'):
+                    elif 'expires' in current.session.token:
                         exps = 'expires'
                     else:
                         exps = None
@@ -187,7 +206,7 @@ server for requests.  It can be used for the optional"scope" parameters for Face
 
     def __init__(self, g=None,
                  client_id=None, client_secret=None,
-                 auth_url=None, token_url=None, **args):
+                 auth_url=None, token_url=None, socket_timeout=60, **args):
         """
         first argument is unused. Here only for legacy reasons.
         """
@@ -203,6 +222,7 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         self.auth_url = auth_url
         self.token_url = token_url
         self.args = args
+        self.socket_timeout = socket_timeout
 
     def login_url(self, next="/"):
         self.__oauth_login(next)
@@ -217,11 +237,12 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         Override this method by sublcassing the class.
 
         """
-        if not current.session.token: return None
-        return dict(first_name = 'Pinco',
-                    last_name = 'Pallino',
-                    username = 'pincopallino')
-        raise NotImplementedError, "Must override get_user()"
+        if not current.session.token:
+            return None
+        return dict(first_name='Pinco',
+                    last_name='Pallino',
+                    username='pincopallino')
+        raise NotImplementedError("Must override get_user()")
 
         # Following code is never executed.  It can be used as example
         # for overriding in subclasses.
@@ -239,10 +260,9 @@ server for requests.  It can be used for the optional"scope" parameters for Face
             self.graph = None
 
         if user:
-            return dict(first_name = user['first_name'],
-                        last_name = user['last_name'],
-                        username = user['id'])
-
+            return dict(first_name=user['first_name'],
+                        last_name=user['last_name'],
+                        username=user['id'])
 
     def __oauth_login(self, next):
         """
@@ -256,22 +276,16 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         accessToken()
         """
 
-        if not self.accessToken():
-            if not current.request.vars.code:
-                current.session.redirect_uri=self.__redirect_uri(next)
-                data = dict(redirect_uri=current.session.redirect_uri,
-                                  response_type='code',
-                                  client_id=self.client_id)
-                if self.args:
-                    data.update(self.args)
-                auth_request_url = self.auth_url + "?" +urlencode(data)
-                raise HTTP(307,
-                           "You are not authenticated: you are being redirected to the <a href='" + auth_request_url + "'> authentication server</a>",
-                           Location=auth_request_url)
-            else:
-                current.session.code = current.request.vars.code
-                self.accessToken()
-                return current.session.code
-        return None
-
-
+        token = self.accessToken()
+        if not token:
+            current.session.redirect_uri = self.__redirect_uri(next)
+            data = dict(redirect_uri=current.session.redirect_uri,
+                        response_type='code',
+                        client_id=self.client_id)
+            if self.args:
+                data.update(self.args)
+            auth_request_url = self.auth_url + "?" + urlencode(data)
+            raise HTTP(302,
+                       "You are not authenticated: you are being redirected to the <a href='" + auth_request_url + "'> authentication server</a>",
+                       Location=auth_request_url)
+        return

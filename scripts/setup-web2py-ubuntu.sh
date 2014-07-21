@@ -6,7 +6,7 @@ echo "This script will:
 5) overwrite /etc/apache2/sites-available/default
 6) restart apache.
 
-You may want to read this cript before running it.
+You may want to read this script before running it.
 
 Press a key to continue...[ctrl+C to abort]"
 
@@ -59,6 +59,7 @@ cd www-data
 rm web2py_src.zip*
 wget http://web2py.com/examples/static/web2py_src.zip
 unzip web2py_src.zip
+mv web2py/handlers/wsgihandler.py web2py/wsgihandler.py
 chown -R www-data:www-data web2py
 
 echo "setting up apache modules"
@@ -68,6 +69,7 @@ a2enmod proxy
 a2enmod proxy_http
 a2enmod headers
 a2enmod expires
+a2enmod wsgi
 mkdir /etc/apache2/ssl
 
 echo "creating a self signed certificate"
@@ -89,7 +91,7 @@ NameVirtualHost *:443
 # within a virtual host container, only WSGI applications associated with
 # virtual hosts with the same server name as that virtual host can be
 # delegated to that set of daemon processes.
-WSGIDaemonProcess web2py user=www-data group=www-data
+WSGIDaemonProcess web2py user=www-data group=www-data processes=1 threads=1
 
 <VirtualHost *:80>
   WSGIProcessGroup web2py
@@ -105,7 +107,7 @@ WSGIDaemonProcess web2py user=www-data group=www-data
     </Files>
   </Directory>
 
-  AliasMatch ^/([^/]+)/static/(.*) \
+  AliasMatch ^/([^/]+)/static/(?:_[\d]+.[\d]+.[\d]+/)?(.*) \
            /home/www-data/web2py/applications/$1/static/$2
   <Directory /home/www-data/web2py/applications/*/static/>
     Options -Indexes
@@ -143,7 +145,7 @@ WSGIDaemonProcess web2py user=www-data group=www-data
     </Files>
   </Directory>
 
-  AliasMatch ^/([^/]+)/static/(.*) \
+  AliasMatch ^/([^/]+)/static/(?:_[\d]+.[\d]+.[\d]+/)?(.*) \
         /home/www-data/web2py/applications/$1/static/$2
 
   <Directory /home/www-data/web2py/applications/*/static/>
@@ -166,7 +168,7 @@ WSGIDaemonProcess web2py user=www-data group=www-data
 # ln -s /etc/pam.d/apache2 /etc/pam.d/httpd
 # usermod -a -G shadow www-data
 
-echo "restarting apage"
+echo "restarting apache"
 echo "================"
 
 /etc/init.d/apache2 restart
@@ -174,4 +176,3 @@ cd /home/www-data/web2py
 sudo -u www-data python -c "from gluon.widget import console; console();"
 sudo -u www-data python -c "from gluon.main import save_password; save_password(raw_input('admin password: '),443)"
 echo "done!"
-

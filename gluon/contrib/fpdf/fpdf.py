@@ -23,9 +23,13 @@ try:
 except ImportError:
     import pickle
 
+# Check if PIL is available (tries importing both pypi version and corrected or manually installed versions).
+# Necessary for JPEG and GIF support.
 try:
-    # Check if PIL is available, necessary for JPEG support.
-    import Image
+    try:
+        import Image
+    except:
+        from PIL import Image
 except ImportError:
     Image = None
 
@@ -369,6 +373,21 @@ class FPDF(object):
         "Draw a line"
         self._out(sprintf('%.2f %.2f m %.2f %.2f l S',x1*self.k,(self.h-y1)*self.k,x2*self.k,(self.h-y2)*self.k))
 
+    def _set_dash(self, dash_length=False, space_length=False):
+        if(dash_length and space_length):
+            s = sprintf('[%.3f %.3f] 0 d', dash_length*self.k, space_length*self.k)
+        else:
+            s = '[] 0 d'
+        self._out(s)
+
+    def dashed_line(self, x1,y1,x2,y2, dash_length=1, space_length=1):
+        """Draw a dashed line. Same interface as line() except:
+           - dash_length: Length of the dash
+           - space_length: Length of the space between dashes"""
+        self._set_dash(dash_length, space_length)
+        self.line(x1, y1, x2, y2)
+        self._set_dash()
+
     def rect(self, x,y,w,h,style=''):
         "Draw a rectangle"
         if(style=='F'):
@@ -446,7 +465,7 @@ class FPDF(object):
                     fh = open(unifilename, "w")
                     pickle.dump(font_dict, fh)
                     fh.close()
-                except IOError as e:
+                except IOError, e:
                     if not e.errno == errno.EACCES:
                         raise  # Not a permission error.
                 del ttf
@@ -680,7 +699,7 @@ class FPDF(object):
                     for uni in UTF8StringToArray(txt):
                         self.current_font['subset'].append(uni)
                 else:
-                    txt2 = txt.replace('\\','\\\\').replace(')','\\)').replace('(','\\(')
+                    txt2 = self._escape(txt)
                 s += sprintf('BT %.2f %.2f Td (%s) Tj ET',(self.x+dx)*k,(self.h-(self.y+.5*h+.3*self.font_size))*k,txt2)
 
             if(self.underline):
@@ -896,6 +915,24 @@ class FPDF(object):
                 info=self._parsepng(name)
             else:
                 #Allow for additional formats
+                #maybe the image is not showing the correct extension,
+                #but the header is OK,
+                succeed_parsing = False
+                #try all the parsing functions
+                parsing_functions = [self._parsejpg,self._parsepng,self._parsegif]
+                for pf in parsing_functions:
+                    try:
+                        info = pf(name)
+                        succeed_parsing = True
+                        break;
+                    except:
+                        pass
+                #last resource
+                if not succeed_parsing:
+                    mtd='_parse'+type
+                    if not hasattr(self,mtd):
+                        self.error('Unsupported image type: '+type)
+                    info=getattr(self, mtd)(name)
                 mtd='_parse'+type
                 if not hasattr(self,mtd):
                     self.error('Unsupported image type: '+type)
@@ -1337,7 +1374,7 @@ class FPDF(object):
                     font_dict['range'] = range_
                     pickle.dump(font_dict, fh)
                     fh.close()
-                except IOError as e:
+                except IOError, e:
                     if not e.errno == errno.EACCES:
                         raise  # Not a permission error.
             if (font['cw'][cid] == 0):
@@ -1637,9 +1674,11 @@ class FPDF(object):
             # Use temporary file
             f = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
             tmp = f.name
-            transparency = im.info['transparency']
             f.close()
-            im.save(tmp, transparency=transparency)
+            if "transparency" in im.info:
+                im.save(tmp, transparency = im.info['transparency'])
+            else:
+                im.save(tmp)
             info = self._parsepng(tmp)
             os.unlink(tmp)
         return info
@@ -1759,7 +1798,7 @@ class FPDF(object):
     def _freadint(self, f):
         #Read a 4-byte integer from file
         try:
-            return struct.unpack('>HH',f.read(4))[1]
+            return struct.unpack('>I', f.read(4))[0]
         except:
             return None
 
@@ -1769,7 +1808,7 @@ class FPDF(object):
 
     def _escape(self, s):
         #Add \ before \, ( and )
-        return s.replace('\\','\\\\').replace(')','\\)').replace('(','\\(')
+        return s.replace('\\','\\\\').replace(')','\\)').replace('(','\\(').replace('\r','\\r')
 
     def _putstream(self, s):
         self._out('stream')
@@ -1877,6 +1916,5 @@ class FPDF(object):
                     self.rect(x, y, line_width, h, 'F')
                 x += line_width
         x += gap
-
 
 

@@ -7,12 +7,36 @@
 
 import sys
 import os
-if os.path.isdir('gluon'):
-    sys.path.append(os.path.realpath('gluon'))
-else:
-    sys.path.append(os.path.realpath('../'))
-
 import unittest
+
+def fix_sys_path():
+    """
+    logic to have always the correct sys.path
+     '', web2py/gluon, web2py/site-packages, web2py/ ...
+    """
+
+    def add_path_first(path):
+        sys.path = [path] + [p for p in sys.path if (
+            not p == path and not p == (path + '/'))]
+
+    path = os.path.dirname(os.path.abspath(__file__))
+
+    if not os.path.isfile(os.path.join(path,'web2py.py')):
+        i = 0
+        while i<10:
+            i += 1
+            if os.path.exists(os.path.join(path,'web2py.py')):
+                break
+            path = os.path.abspath(os.path.join(path, '..'))
+
+    paths = [path,
+             os.path.abspath(os.path.join(path, 'site-packages')),
+             os.path.abspath(os.path.join(path, 'gluon')),
+             '']
+    [add_path_first(path) for path in paths]
+
+fix_sys_path()
+
 from html import *
 
 
@@ -45,8 +69,50 @@ class TestBareHelpers(unittest.TestCase):
                          '<meta a="1" b="2" />')
 
     def testA(self):
-        self.assertEqual(A('<>', _a='1', _b='2').xml(),
-                         '<a a="1" b="2">&lt;&gt;</a>')
+        self.assertEqual(
+            A('<>', _a='1', _b='2').xml(),
+            '<a a="1" b="2">&lt;&gt;</a>'
+            )
+        self.assertEqual(
+            A('a', cid='b').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="GET" data-w2p_target="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', callback='b', _id='c').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="POST" href="b" id="c">a</a>'
+            )
+        self.assertEqual(
+            A('a', delete='tr').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_remove="tr">a</a>'
+            )
+        self.assertEqual(
+            A('a', _id='b', target='<self>').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_target="b" id="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', component='b').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="GET" href="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', _id='b', callback='c', noconfirm=True).xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="POST" href="c" id="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', cid='b').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="GET" data-w2p_target="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', cid='b', _disable_with='processing...').xml(),
+            '<a data-w2p_disable_with="processing..." data-w2p_method="GET" data-w2p_target="b">a</a>'
+            )
+        self.assertEqual(
+            A('a', callback='b', delete='tr', noconfirm=True, _id='c').xml(),
+            '<a data-w2p_disable_with="default" data-w2p_method="POST" data-w2p_remove="tr" href="b" id="c">a</a>'
+            )
+        self.assertEqual(
+            A('a', callback='b', delete='tr', confirm='Are you sure?', _id='c').xml(),
+            '<a data-w2p_confirm="Are you sure?" data-w2p_disable_with="default" data-w2p_method="POST" data-w2p_remove="tr" href="b" id="c">a</a>'
+            )
 
     def testB(self):
         self.assertEqual(B('<>', _a='1', _b='2').xml(),
@@ -74,7 +140,7 @@ class TestBareHelpers(unittest.TestCase):
 
     def testFORM(self):
         self.assertEqual(FORM('<>', _a='1', _b='2').xml(),
-                         '<form a="1" action="" b="2" enctype="multipart/form-data" method="post">&lt;&gt;</form>')
+                         '<form a="1" action="#" b="2" enctype="multipart/form-data" method="post">&lt;&gt;</form>')
 
     def testH1(self):
         self.assertEqual(H1('<>', _a='1', _b='2').xml(),
@@ -130,7 +196,7 @@ class TestBareHelpers(unittest.TestCase):
 
     def testOPTION(self):
         self.assertEqual(OPTION('<>', _a='1', _b='2').xml(),
-                         '<option a="1" b="2" value="&lt;&gt;">&lt;&gt;' + \
+                         '<option a="1" b="2" value="&lt;&gt;">&lt;&gt;' +
                          '</option>')
 
     def testP(self):
@@ -149,7 +215,7 @@ class TestBareHelpers(unittest.TestCase):
 
     def testSELECT(self):
         self.assertEqual(SELECT('<>', _a='1', _b='2').xml(),
-                         '<select a="1" b="2">'+ \
+                         '<select a="1" b="2">' +
                          '<option value="&lt;&gt;">&lt;&gt;</option></select>')
 
     def testSPAN(self):
@@ -162,7 +228,7 @@ class TestBareHelpers(unittest.TestCase):
 
     def testTABLE(self):
         self.assertEqual(TABLE('<>', _a='1', _b='2').xml(),
-                         '<table a="1" b="2"><tr><td>&lt;&gt;</td></tr>' + \
+                         '<table a="1" b="2"><tr><td>&lt;&gt;</td></tr>' +
                          '</table>')
 
     def testTBODY(self):
@@ -175,8 +241,8 @@ class TestBareHelpers(unittest.TestCase):
 
     def testTEXTAREA(self):
         self.assertEqual(TEXTAREA('<>', _a='1', _b='2').xml(),
-                        '<textarea a="1" b="2" cols="40" rows="10">&lt;&gt;' + \
-                        '</textarea>')
+                         '<textarea a="1" b="2" cols="40" rows="10">&lt;&gt;' +
+                         '</textarea>')
 
     def testTFOOT(self):
         self.assertEqual(TFOOT('<>', _a='1', _b='2').xml(),
@@ -188,6 +254,10 @@ class TestBareHelpers(unittest.TestCase):
 
     def testTHEAD(self):
         self.assertEqual(THEAD('<>', _a='1', _b='2').xml(),
+                         '<thead a="1" b="2"><tr><th>&lt;&gt;</th></tr></thead>')
+        #self.assertEqual(THEAD(TRHEAD('<>'), _a='1', _b='2').xml(),
+        #                 '<thead a="1" b="2"><tr><th>&lt;&gt;</th></tr></thead>')
+        self.assertEqual(THEAD(TR('<>'), _a='1', _b='2').xml(),
                          '<thead a="1" b="2"><tr><td>&lt;&gt;</td></tr></thead>')
 
     def testTITLE(self):
@@ -206,7 +276,11 @@ class TestBareHelpers(unittest.TestCase):
         self.assertEqual(UL('<>', _a='1', _b='2').xml(),
                          '<ul a="1" b="2"><li>&lt;&gt;</li></ul>')
 
+class TestData(unittest.TestCase):
+
+    def testAdata(self):
+        self.assertEqual(A('<>', data=dict(abc='<def?asd>', cde='standard'), _a='1', _b='2').xml(),'<a a="1" b="2" data-abc="&lt;def?asd&gt;" data-cde="standard">&lt;&gt;</a>')
+
 
 if __name__ == '__main__':
     unittest.main()
-
